@@ -423,7 +423,7 @@ export const initCommand = new Command("init")
 		console.log("");
 		logSuccess("初始化完成!");
 		log(
-			`下一步: 在 AI 工具中运行 ${pc.bold('/superharness "你的需求"')}`,
+			`下一步: 在 AI 工具中运行 ${pc.bold('/superharness:go "你的需求或需求链接"')}`,
 		);
 		log(`编辑 ${pc.dim(".superharness/spec/")} 自定义项目规范`);
 		console.log("");

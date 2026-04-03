@@ -11,7 +11,7 @@ Superharness 把开发纪律变成机械强制的工作流，而不是靠 AI 自
 ## 工作流程
 
 ```
-/superharness "做一个旅行规划 app"
+/superharness:go "做一个旅行规划 app"
 
   1. 头脑风暴 ── 逐个问题澄清需求，提出 2-3 种方案，用户确认设计
   2. 任务拆解 ── 生成 bite-sized 任务（每个 2-5 分钟），完整代码，精确路径
@@ -34,7 +34,7 @@ npm install -g superharness
 superharness init --platforms claude-code --template frontend
 
 # 3. 在 AI 工具中使用
-/superharness "你的需求描述"
+/superharness:go "你的需求描述或需求链接"
 ```
 
 `--template` 可选值：`frontend`、`backend`、`ai-agent`、`fullstack`、`blank`
