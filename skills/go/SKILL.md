@@ -1,6 +1,6 @@
 ---
-name: superharness
-description: "Main entry point: end-to-end workflow for building features. Use /superharness 'requirement' to start. Orchestrates brainstorm → plan → TDD implementation → review → QA."
+name: go
+description: "Main entry point: end-to-end workflow for building features. Use /superharness:go 'requirement' to start. Orchestrates brainstorm → plan → TDD implementation → review → QA."
 ---
 
 # Superharness Workflow

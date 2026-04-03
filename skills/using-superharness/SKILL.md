@@ -11,7 +11,7 @@ This guide is injected at the start of each AI session to establish how superhar
 
 | Skill | When to Use |
 |-------|-------------|
-| `superharness:superharness` | Main entry: `/superharness "requirement"` for end-to-end workflow |
+| `superharness:go` | Main entry: `/superharness:go "requirement"` for end-to-end workflow |
 | `superharness:brainstorm` | Before any creative work — explore ideas, clarify requirements |
 | `superharness:writing-plans` | After brainstorm — create detailed implementation plans |
 | `superharness:subagent-driven-development` | Execute plans with fresh subagent per task + dual review |
