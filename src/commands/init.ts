@@ -4,22 +4,24 @@ import {
 	mkdirSync,
 	cpSync,
 	writeFileSync,
-	symlinkSync,
 	readFileSync,
+	readdirSync,
+	statSync,
 } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { homedir } from "node:os";
 import pc from "picocolors";
-import { log, logSuccess, logWarn, logError } from "../utils/log.js";
+import { log, logSuccess, logWarn } from "../utils/log.js";
 
 const SUPERHARNESS_DIR = ".superharness";
 const PLATFORMS = [
 	"claude-code",
+	"aone-copilot",
 	"codex",
 	"cursor",
 	"qoder",
 	"gemini",
+	"copilot",
 ] as const;
 type Platform = (typeof PLATFORMS)[number];
 
@@ -37,6 +39,8 @@ function getPackageRoot(): string {
 	// dist/index.js → package root
 	return resolve(dirname(currentFile), "..");
 }
+
+// ─── .superharness/ directory ───
 
 function createSuperHarnessDir(projectDir: string): void {
 	const shDir = join(projectDir, SUPERHARNESS_DIR);
@@ -92,57 +96,244 @@ function copyInitTemplates(projectDir: string, packageRoot: string): void {
 	logSuccess("已生成配置文件");
 }
 
-function setupClaudeCode(packageRoot: string): void {
-	const pluginsDir = join(homedir(), ".claude", "plugins");
-	const symlinkPath = join(pluginsDir, "superharness");
+// ─── Skill format conversion helpers ───
 
-	if (existsSync(symlinkPath)) {
-		log("Claude Code: 插件已链接");
-		return;
+/**
+ * List all skill directories under skills/ (each containing SKILL.md)
+ */
+function listSkillDirs(packageRoot: string): string[] {
+	const skillsDir = join(packageRoot, "skills");
+	if (!existsSync(skillsDir)) return [];
+	return readdirSync(skillsDir).filter((name) => {
+		const fullPath = join(skillsDir, name);
+		return (
+			statSync(fullPath).isDirectory() &&
+			existsSync(join(fullPath, "SKILL.md"))
+		);
+	});
+}
+
+/**
+ * Copy SKILL.md content as a flat .md file (for .claude/commands/ format).
+ * Strips YAML frontmatter or keeps it depending on platform needs.
+ */
+function copySkillAsCommand(
+	packageRoot: string,
+	skillName: string,
+	destPath: string,
+): void {
+	const srcPath = join(packageRoot, "skills", skillName, "SKILL.md");
+	const content = readFileSync(srcPath, "utf-8");
+	mkdirSync(dirname(destPath), { recursive: true });
+	writeFileSync(destPath, content);
+}
+
+/**
+ * Copy skill directory as-is (for SKILL.md standard platforms: Codex/Qoder/Aone).
+ */
+function copySkillDir(
+	packageRoot: string,
+	skillName: string,
+	destDir: string,
+): void {
+	const srcDir = join(packageRoot, "skills", skillName);
+	const targetDir = join(destDir, skillName);
+	cpSync(srcDir, targetDir, { recursive: true });
+}
+
+// ─── Claude Code: project-level .claude/ injection ───
+
+function mergeClaudeSettings(
+	projectDir: string,
+	hookCommand: string,
+): void {
+	const settingsPath = join(projectDir, ".claude", "settings.json");
+
+	let settings: Record<string, unknown> = {};
+	if (existsSync(settingsPath)) {
+		try {
+			settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+		} catch {
+			logWarn("无法解析已有 .claude/settings.json，将创建新文件");
+		}
 	}
 
-	mkdirSync(pluginsDir, { recursive: true });
-	try {
-		symlinkSync(packageRoot, symlinkPath);
-		logSuccess("Claude Code: 已链接到 ~/.claude/plugins/superharness");
-	} catch (err) {
-		logError(
-			`Claude Code: 创建符号链接失败 (${(err as Error).message})`,
+	// Ensure hooks.SessionStart array exists
+	const hooks = (settings.hooks || {}) as Record<string, unknown[]>;
+	const sessionStart = (hooks.SessionStart || []) as Array<{
+		matcher?: string;
+		hooks?: Array<{ type: string; command: string; timeout?: number }>;
+	}>;
+
+	// Check if superharness hook already exists
+	const shHookExists = sessionStart.some((entry) =>
+		entry.hooks?.some((h) => h.command.includes("superharness")),
+	);
+
+	if (!shHookExists) {
+		sessionStart.push({
+			matcher: "startup|clear|compact",
+			hooks: [
+				{
+					type: "command",
+					command: hookCommand,
+					timeout: 10,
+				},
+			],
+		});
+	}
+
+	hooks.SessionStart = sessionStart;
+	settings.hooks = hooks;
+
+	mkdirSync(dirname(settingsPath), { recursive: true });
+	writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
+}
+
+function setupClaudeCode(projectDir: string, packageRoot: string): void {
+	const claudeDir = join(projectDir, ".claude");
+	const commandsDir = join(claudeDir, "commands", "superharness");
+	const agentsDir = join(claudeDir, "agents");
+	const hooksDir = join(claudeDir, "hooks");
+
+	// 1. Copy skills as .claude/commands/superharness/*.md
+	mkdirSync(commandsDir, { recursive: true });
+	const skillNames = listSkillDirs(packageRoot);
+	for (const name of skillNames) {
+		copySkillAsCommand(
+			packageRoot,
+			name,
+			join(commandsDir, `${name}.md`),
 		);
-		log(`手动链接: ln -s ${packageRoot} ${symlinkPath}`);
+	}
+	logSuccess(
+		`Claude Code: 已复制 ${skillNames.length} 个 skill 到 .claude/commands/superharness/`,
+	);
+
+	// 2. Copy agents to .claude/agents/
+	const agentsSrc = join(packageRoot, "agents");
+	if (existsSync(agentsSrc)) {
+		cpSync(agentsSrc, agentsDir, { recursive: true });
+		logSuccess("Claude Code: 已复制 agent 到 .claude/agents/");
+	}
+
+	// 3. Copy hook script to .claude/hooks/
+	const hookSrc = join(packageRoot, "dist", "hooks", "session-start.js");
+	if (existsSync(hookSrc)) {
+		mkdirSync(hooksDir, { recursive: true });
+		cpSync(hookSrc, join(hooksDir, "session-start.js"));
+		logSuccess("Claude Code: 已复制 hook 到 .claude/hooks/");
+	} else {
+		logWarn("Claude Code: hook 脚本未找到 (需要先 npm run build)");
+	}
+
+	// 4. Merge settings.json (append SessionStart hook)
+	mergeClaudeSettings(
+		projectDir,
+		"node .claude/hooks/session-start.js",
+	);
+	logSuccess("Claude Code: 已合并 settings.json");
+}
+
+// ─── Aone Copilot: .aone_copilot/skills/ + .claude/skills/ ───
+
+function setupAoneCopilot(projectDir: string, packageRoot: string): void {
+	const skillNames = listSkillDirs(packageRoot);
+	const aoneSkillsDir = join(projectDir, ".aone_copilot", "skills");
+	const claudeSkillsDir = join(projectDir, ".claude", "skills");
+
+	// 1. Copy skills to .aone_copilot/skills/
+	for (const name of skillNames) {
+		copySkillDir(packageRoot, name, aoneSkillsDir);
+	}
+	logSuccess(
+		`Aone Copilot: 已复制 ${skillNames.length} 个 skill 到 .aone_copilot/skills/`,
+	);
+
+	// 2. Copy skills to .claude/skills/ (Aone reads both)
+	for (const name of skillNames) {
+		copySkillDir(packageRoot, name, claudeSkillsDir);
+	}
+	logSuccess("Aone Copilot: 已复制 skill 到 .claude/skills/");
+
+	// 3. Create .aone_copilot/hooks.json
+	const hooksConfig = {
+		version: 1,
+		hooks: {
+			sessionStart: [
+				{
+					command: "node .claude/hooks/session-start.js",
+				},
+			],
+		},
+	};
+	const aoneDir = join(projectDir, ".aone_copilot");
+	mkdirSync(aoneDir, { recursive: true });
+	writeFileSync(
+		join(aoneDir, "hooks.json"),
+		JSON.stringify(hooksConfig, null, 2) + "\n",
+	);
+	logSuccess("Aone Copilot: 已创建 hooks.json");
+
+	// 4. Copy hook script to .claude/hooks/ (shared with Claude Code)
+	const hookSrc = join(packageRoot, "dist", "hooks", "session-start.js");
+	const hooksDir = join(projectDir, ".claude", "hooks");
+	if (existsSync(hookSrc)) {
+		mkdirSync(hooksDir, { recursive: true });
+		if (!existsSync(join(hooksDir, "session-start.js"))) {
+			cpSync(hookSrc, join(hooksDir, "session-start.js"));
+		}
 	}
 }
 
-function setupCodex(packageRoot: string): void {
-	const skillsDir = join(homedir(), ".agents", "skills");
-	const symlinkPath = join(skillsDir, "superharness");
+// ─── Codex: .codex/skills/ ───
 
-	if (existsSync(symlinkPath)) {
-		log("Codex: skills 已链接");
-		return;
-	}
+function setupCodex(projectDir: string, packageRoot: string): void {
+	const skillNames = listSkillDirs(packageRoot);
+	const codexSkillsDir = join(projectDir, ".codex", "skills");
 
-	mkdirSync(skillsDir, { recursive: true });
-	const skillsSrc = join(packageRoot, "skills");
-	try {
-		symlinkSync(skillsSrc, symlinkPath);
-		logSuccess("Codex: 已链接到 ~/.agents/skills/superharness");
-	} catch (err) {
-		logError(
-			`Codex: 创建符号链接失败 (${(err as Error).message})`,
-		);
+	for (const name of skillNames) {
+		copySkillDir(packageRoot, name, codexSkillsDir);
 	}
+	logSuccess(
+		`Codex: 已复制 ${skillNames.length} 个 skill 到 .codex/skills/`,
+	);
 }
+
+// ─── Qoder: .qoder/skills/ ───
 
 function setupQoder(projectDir: string, packageRoot: string): void {
+	const skillNames = listSkillDirs(packageRoot);
 	const qoderSkillsDir = join(projectDir, ".qoder", "skills");
-	const skillsSrc = join(packageRoot, "skills");
 
-	if (!existsSync(skillsSrc)) return;
-
-	cpSync(skillsSrc, qoderSkillsDir, { recursive: true });
-	logSuccess("Qoder: 已复制 skills 到 .qoder/skills/");
+	for (const name of skillNames) {
+		copySkillDir(packageRoot, name, qoderSkillsDir);
+	}
+	logSuccess(
+		`Qoder: 已复制 ${skillNames.length} 个 skill 到 .qoder/skills/`,
+	);
 }
+
+// ─── Cursor: .cursor/commands/ (flat, prefix naming) ───
+
+function setupCursor(projectDir: string, packageRoot: string): void {
+	const commandsDir = join(projectDir, ".cursor", "commands");
+	mkdirSync(commandsDir, { recursive: true });
+
+	const skillNames = listSkillDirs(packageRoot);
+	for (const name of skillNames) {
+		copySkillAsCommand(
+			packageRoot,
+			name,
+			join(commandsDir, `superharness-${name}.md`),
+		);
+	}
+	logSuccess(
+		`Cursor: 已复制 ${skillNames.length} 个 skill 到 .cursor/commands/`,
+	);
+}
+
+// ─── Platform dispatcher ───
 
 function setupPlatform(
 	platform: Platform,
@@ -151,22 +342,30 @@ function setupPlatform(
 ): void {
 	switch (platform) {
 		case "claude-code":
-			setupClaudeCode(packageRoot);
+			setupClaudeCode(projectDir, packageRoot);
+			break;
+		case "aone-copilot":
+			setupAoneCopilot(projectDir, packageRoot);
 			break;
 		case "codex":
-			setupCodex(packageRoot);
+			setupCodex(projectDir, packageRoot);
 			break;
 		case "qoder":
 			setupQoder(projectDir, packageRoot);
 			break;
 		case "cursor":
-			logWarn("Cursor: 插件机制待验证 (Phase 2)");
+			setupCursor(projectDir, packageRoot);
 			break;
 		case "gemini":
-			logWarn("Gemini CLI: 适配器待开发 (Phase 4)");
+			logWarn("Gemini CLI: Markdown→TOML 转换待开发 (Phase 4)");
+			break;
+		case "copilot":
+			logWarn("GitHub Copilot: 适配器待开发 (Phase 2)");
 			break;
 	}
 }
+
+// ─── Command definition ───
 
 export const initCommand = new Command("init")
 	.description("在当前项目中初始化 superharness")
@@ -183,7 +382,9 @@ export const initCommand = new Command("init")
 	.action((options: { platforms: string; template: string }) => {
 		const projectDir = process.cwd();
 		const packageRoot = getPackageRoot();
-		const platforms = options.platforms.split(",").map((p) => p.trim()) as Platform[];
+		const platforms = options.platforms
+			.split(",")
+			.map((p) => p.trim()) as Platform[];
 		const template = options.template as Template;
 
 		const isDefaultPlatform =
@@ -224,8 +425,6 @@ export const initCommand = new Command("init")
 		log(
 			`下一步: 在 AI 工具中运行 ${pc.bold('/superharness "你的需求"')}`,
 		);
-		log(
-			`编辑 ${pc.dim(".superharness/spec/")} 自定义项目规范`,
-		);
+		log(`编辑 ${pc.dim(".superharness/spec/")} 自定义项目规范`);
 		console.log("");
 	});
