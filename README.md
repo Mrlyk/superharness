@@ -1,7 +1,7 @@
-<p align="center">
-  <strong>Superharness</strong><br/>
+<h1 align="center">
+  <strong>superharness</strong><br/>
   <sub>与 AI 工具无关的软件工程工作流引擎</sub>
-</p>
+</h1>
 
 <p align="center">
   <a href="https://code.alibaba-inc.com/btrip-fe/superharness">仓库</a> &bull;
