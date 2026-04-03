@@ -1,6 +1,5 @@
 <h1 align="center">
   <strong>superharness</strong><br/>
-  <sub>与 AI 工具无关的软件工程工作流引擎</sub>
 </h1>
 
 <p align="center">
@@ -11,6 +10,7 @@
 </p>
 
 <p align="center">
+<sub>Harness your AI coding tools</sub><br />
   <sub>支持 Claude Code、Aone Copilot、Codex、Qoder、Cursor、Gemini CLI、GitHub Copilot</sub>
 </p>
 
