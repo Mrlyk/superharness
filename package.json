@@ -25,6 +25,10 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write ."
   },
+    "author": {
+    "name": "宜行",
+    "email": "liaoyikang.liaoyik@alibaba-inc.com"
+  },
   "keywords": [
     "ai",
     "workflow",
@@ -35,7 +39,6 @@
     "cursor",
     "harness"
   ],
-  "author": "",
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",
