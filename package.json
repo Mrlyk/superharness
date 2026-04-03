@@ -1,0 +1,53 @@
+{
+  "name": "superharness",
+  "version": "0.1.0",
+  "description": "AI tool-agnostic workflow engine for software engineering",
+  "type": "module",
+  "bin": {
+    "superharness": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "skills",
+    "agents",
+    "hooks",
+    "spec-templates",
+    "templates",
+    ".claude-plugin"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
+  },
+  "keywords": [
+    "ai",
+    "workflow",
+    "tdd",
+    "skills",
+    "claude-code",
+    "codex",
+    "cursor",
+    "harness"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/node": "^25.5.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "commander": "^13.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

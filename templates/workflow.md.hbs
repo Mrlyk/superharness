@@ -1,0 +1,31 @@
+# {{projectName}} Workflow
+
+## Development Flow
+
+1. `/superharness "requirement"` to start a new feature
+2. Brainstorm phase clarifies requirements with user
+3. Planning phase creates task breakdown with Sprint Contract
+4. Implementation uses TDD (Red-Green-Refactor) per task
+5. Each task gets dual review: spec compliance + code quality
+6. QA evaluation (manual `superharness qa` or `/superharness:qa`)
+7. Fix issues with `/superharness:fix` if needed
+8. Merge worktree when all tasks pass
+
+## Conventions
+
+- All code changes happen in isolated git worktrees
+- Every task follows TDD: write failing test first, then implement
+- No task is complete without fresh verification evidence
+- Spec files in `.superharness/spec/` are the source of truth for conventions
+
+## Task Lifecycle
+
+```
+planning → in_progress → review → completed
+```
+
+## Worktree
+
+- Created automatically per feature
+- Branch naming: `superharness/{feature-name}`
+- Merge back to base branch when complete

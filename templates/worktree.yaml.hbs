@@ -1,0 +1,7 @@
+worktree_dir: .worktrees
+copy:
+  - .superharness/
+post_create: []
+verify:
+  - npm test
+  - npx tsc --noEmit

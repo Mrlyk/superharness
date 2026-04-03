@@ -1,0 +1,27 @@
+project:
+  name: {{projectName}}
+  type: auto  # auto-detected or: frontend | backend | fullstack | ai-agent
+
+platforms:
+  - claude-code
+
+# monorepo:
+#   packages:
+#     - frontend
+#     - backend
+
+observability:
+  trace: true
+  summary: true
+
+qa:
+  max_fix_rounds: 3
+  services: []
+  # services:
+  #   - name: my-qa-service
+  #     type: managed
+  #     endpoint: http://localhost:8080
+  #   - name: e2e-tests
+  #     type: autonomous
+  #     command: npm run qa:e2e
+  #     output: .superharness/tasks/{task}/qa-results-e2e.json

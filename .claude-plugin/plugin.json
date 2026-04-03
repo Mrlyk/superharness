@@ -1,0 +1,16 @@
+{
+  "name": "superharness",
+  "description": "AI tool-agnostic workflow engine: TDD, spec-driven development, subagent coordination, and QA integration",
+  "version": "0.1.0",
+  "author": {
+    "name": ""
+  },
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "tdd",
+    "skills",
+    "harness",
+    "spec-driven"
+  ]
+}
