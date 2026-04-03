@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-<sub>Harness your AI coding tools</sub><br />
+<sub>驾驭你的 AI 编码工具</sub><br />
   <sub>支持 Claude Code、Aone Copilot、Codex、Qoder、Cursor、Gemini CLI、GitHub Copilot</sub>
 </p>
 
