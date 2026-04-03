@@ -81,15 +81,65 @@ function buildContext(projectDir: string): string {
 		}
 	}
 
-	// 3. Current task status
+	// 3. Current task status + recovery detection
 	const currentTaskFile = join(shDir, "tasks", ".current-task");
 	const currentTask = readFileOrNull(currentTaskFile)?.trim();
 	if (currentTask) {
 		const taskDir = resolve(projectDir, currentTask);
 		const taskJsonPath = join(taskDir, "task.json");
-		const taskJson = readFileOrNull(taskJsonPath);
-		if (taskJson) {
-			sections.push(`<task-status>\nCurrent task: ${currentTask}\n${taskJson}\n</task-status>`);
+		const taskJsonRaw = readFileOrNull(taskJsonPath);
+		if (taskJsonRaw) {
+			try {
+				const task = JSON.parse(taskJsonRaw) as {
+					name?: string;
+					title?: string;
+					status?: string;
+					phase?: string;
+					worktree_path?: string;
+					sprint?: { current?: number; total?: number };
+				};
+
+				if (task.status && task.status !== "completed") {
+					// Unfinished task detected - inject recovery prompt
+					const sprintInfo = task.sprint
+						? `Sprint: ${task.sprint.current ?? "?"}/${task.sprint.total ?? "?"}`
+						: "";
+					const phaseInfo = task.phase ? `Phase: ${task.phase}` : "";
+					const worktreeInfo = task.worktree_path
+						? `Worktree: ${task.worktree_path}`
+						: "";
+
+					sections.push(
+						`<task-status>\n` +
+							`Unfinished task detected: ${task.title || task.name || currentTask}\n` +
+							`Status: ${task.status}\n` +
+							[phaseInfo, sprintInfo, worktreeInfo]
+								.filter(Boolean)
+								.join("\n") +
+							`\n\nTask directory: ${currentTask}\n` +
+							`</task-status>`,
+					);
+
+					sections.push(
+						`<instructions>\n` +
+							`An unfinished task was detected. Before doing anything else, ask the user:\n` +
+							`"Detected unfinished task: ${task.title || task.name || currentTask}. Continue this task or start something new?"\n` +
+							`If continue: switch to worktree, read git diff and task.json, resume from current phase.\n` +
+							`If new: user will invoke /superharness:go with their new requirement.\n` +
+							`</instructions>`,
+					);
+				} else {
+					// Task completed or unknown status - just inject as info
+					sections.push(
+						`<task-status>\nLast task: ${currentTask}\nStatus: ${task.status || "unknown"}\n</task-status>`,
+					);
+				}
+			} catch {
+				// Invalid JSON, inject raw
+				sections.push(
+					`<task-status>\nCurrent task: ${currentTask}\n${taskJsonRaw}\n</task-status>`,
+				);
+			}
 		}
 	}
 

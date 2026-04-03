@@ -7,36 +7,11 @@ description: "Main entry point: end-to-end workflow for building features. Use /
 
 End-to-end workflow engine: brainstorm → plan → worktree → TDD implementation → dual review → QA.
 
-## Recovery Check (ALWAYS FIRST)
+## Note on Recovery
 
-Before starting anything, check for unfinished work:
+Unfinished task detection is handled by the **session-start hook**, not by this skill. When a session starts, the hook checks `.superharness/tasks/.current-task` and injects task status into the session context. The AI will automatically ask the user whether to continue the unfinished task before any skill is invoked.
 
-```bash
-cat .superharness/tasks/.current-task 2>/dev/null
-```
-
-If `.current-task` exists and points to a task with `status != "completed"`:
-
-1. Read `task.json` in the task directory → get task name, status, phase, sprint progress
-2. Read `git diff` in the worktree → what code has changed
-3. Read the last 50 lines of the most recent `.superharness/workspace/*/journal-*.md`
-4. Read `contract.md` in the task directory → current sprint's Done Definition
-
-Present a recovery summary to the user:
-
-```
-Detected unfinished task: {task-name}
-  Sprint progress: {current}/{total}
-  Current task: {task-name} ({phase} phase)
-  Worktree: {worktree_path}
-  Code changes: {N} files modified ({file list})
-  Last session: {summary from journal}
-
-Continue current task or start fresh?
-```
-
-If user says "continue" → switch to worktree → resume from current phase.
-If user says "start fresh" → proceed with normal flow below.
+If the user chooses to continue an unfinished task, the AI resumes from the current phase without invoking `/superharness:go`. If the user chooses to start fresh, they invoke `/superharness:go "new requirement"` which proceeds with the normal flow below.
 
 ## Normal Flow
 
