@@ -6,8 +6,8 @@
 <p align="center">
   <a href="https://code.alibaba-inc.com/btrip-fe/superharness">仓库</a> &bull;
   <a href="https://aliyuque.antfin.com/liaoyikang.liaoyik/qzngta/ggo7owk3vlpcupgo">设计方案</a> &bull;
-  <a href="#快速开始">快速开始</a> &bull;
-  <a href="#多平台支持">多平台支持</a>
+  <a href="https://code.alibaba-inc.com/btrip-fe/superharness#快速开始">快速开始</a> &bull;
+  <a href="https://code.alibaba-inc.com/btrip-fe/superharness#多平台支持">多平台支持</a>
 </p>
 
 <p align="center">
