@@ -1,14 +1,35 @@
 import { Command } from "commander";
-import { existsSync, mkdirSync, cpSync, writeFileSync, symlinkSync, readFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	cpSync,
+	writeFileSync,
+	symlinkSync,
+	readFileSync,
+} from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
+import pc from "picocolors";
+import { log, logSuccess, logWarn, logError } from "../utils/log.js";
 
 const SUPERHARNESS_DIR = ".superharness";
-const PLATFORMS = ["claude-code", "codex", "cursor", "qoder", "gemini"] as const;
+const PLATFORMS = [
+	"claude-code",
+	"codex",
+	"cursor",
+	"qoder",
+	"gemini",
+] as const;
 type Platform = (typeof PLATFORMS)[number];
 
-const TEMPLATES = ["frontend", "backend", "ai-agent", "fullstack", "blank"] as const;
+const TEMPLATES = [
+	"frontend",
+	"backend",
+	"ai-agent",
+	"fullstack",
+	"blank",
+] as const;
 type Template = (typeof TEMPLATES)[number];
 
 function getPackageRoot(): string {
@@ -28,7 +49,7 @@ function createSuperHarnessDir(projectDir: string): void {
 	for (const dir of dirs) {
 		mkdirSync(dir, { recursive: true });
 	}
-	console.log(`  Created ${SUPERHARNESS_DIR}/ directory`);
+	logSuccess(`已创建 ${SUPERHARNESS_DIR}/ 目录`);
 }
 
 function copySpecTemplate(
@@ -40,12 +61,12 @@ function copySpecTemplate(
 	const destDir = join(projectDir, SUPERHARNESS_DIR, "spec");
 
 	if (!existsSync(srcDir)) {
-		console.log(`  Warning: template "${template}" not found, using blank`);
+		logWarn(`模板 "${template}" 未找到，使用 blank`);
 		return;
 	}
 
 	cpSync(srcDir, destDir, { recursive: true });
-	console.log(`  Copied spec template: ${template}`);
+	logSuccess(`已复制规范模板: ${pc.bold(template)}`);
 }
 
 function copyInitTemplates(projectDir: string, packageRoot: string): void {
@@ -63,13 +84,12 @@ function copyInitTemplates(projectDir: string, packageRoot: string): void {
 		const destPath = join(shDir, dest);
 		if (existsSync(srcPath)) {
 			const content = readFileSync(srcPath, "utf-8");
-			// Simple template rendering: replace {{projectName}} with directory name
 			const projectName = projectDir.split("/").pop() || "my-project";
 			const rendered = content.replaceAll("{{projectName}}", projectName);
 			writeFileSync(destPath, rendered);
 		}
 	}
-	console.log("  Generated config files");
+	logSuccess("已生成配置文件");
 }
 
 function setupClaudeCode(packageRoot: string): void {
@@ -77,19 +97,19 @@ function setupClaudeCode(packageRoot: string): void {
 	const symlinkPath = join(pluginsDir, "superharness");
 
 	if (existsSync(symlinkPath)) {
-		console.log("  Claude Code: plugin already linked");
+		log("Claude Code: 插件已链接");
 		return;
 	}
 
 	mkdirSync(pluginsDir, { recursive: true });
 	try {
 		symlinkSync(packageRoot, symlinkPath);
-		console.log(`  Claude Code: linked to ~/.claude/plugins/superharness`);
+		logSuccess("Claude Code: 已链接到 ~/.claude/plugins/superharness");
 	} catch (err) {
-		console.log(
-			`  Claude Code: failed to create symlink (${(err as Error).message})`,
+		logError(
+			`Claude Code: 创建符号链接失败 (${(err as Error).message})`,
 		);
-		console.log(`  Manually link: ln -s ${packageRoot} ${symlinkPath}`);
+		log(`手动链接: ln -s ${packageRoot} ${symlinkPath}`);
 	}
 }
 
@@ -98,7 +118,7 @@ function setupCodex(packageRoot: string): void {
 	const symlinkPath = join(skillsDir, "superharness");
 
 	if (existsSync(symlinkPath)) {
-		console.log("  Codex: skills already linked");
+		log("Codex: skills 已链接");
 		return;
 	}
 
@@ -106,10 +126,10 @@ function setupCodex(packageRoot: string): void {
 	const skillsSrc = join(packageRoot, "skills");
 	try {
 		symlinkSync(skillsSrc, symlinkPath);
-		console.log("  Codex: linked to ~/.agents/skills/superharness");
+		logSuccess("Codex: 已链接到 ~/.agents/skills/superharness");
 	} catch (err) {
-		console.log(
-			`  Codex: failed to create symlink (${(err as Error).message})`,
+		logError(
+			`Codex: 创建符号链接失败 (${(err as Error).message})`,
 		);
 	}
 }
@@ -121,7 +141,7 @@ function setupQoder(projectDir: string, packageRoot: string): void {
 	if (!existsSync(skillsSrc)) return;
 
 	cpSync(skillsSrc, qoderSkillsDir, { recursive: true });
-	console.log("  Qoder: copied skills to .qoder/skills/");
+	logSuccess("Qoder: 已复制 skills 到 .qoder/skills/");
 }
 
 function setupPlatform(
@@ -140,24 +160,24 @@ function setupPlatform(
 			setupQoder(projectDir, packageRoot);
 			break;
 		case "cursor":
-			console.log("  Cursor: plugin mechanism pending verification (Phase 2)");
+			logWarn("Cursor: 插件机制待验证 (Phase 2)");
 			break;
 		case "gemini":
-			console.log("  Gemini CLI: adapter pending (Phase 4)");
+			logWarn("Gemini CLI: 适配器待开发 (Phase 4)");
 			break;
 	}
 }
 
 export const initCommand = new Command("init")
-	.description("Initialize superharness in current project")
+	.description("在当前项目中初始化 superharness")
 	.option(
 		"-p, --platforms <platforms>",
-		"comma-separated list of AI platforms",
+		"AI 平台列表，逗号分隔",
 		"claude-code",
 	)
 	.option(
 		"-t, --template <template>",
-		"spec template (frontend|backend|ai-agent|fullstack|blank)",
+		"规范模板 (frontend|backend|ai-agent|fullstack|blank)",
 		"blank",
 	)
 	.action((options: { platforms: string; template: string }) => {
@@ -166,7 +186,12 @@ export const initCommand = new Command("init")
 		const platforms = options.platforms.split(",").map((p) => p.trim()) as Platform[];
 		const template = options.template as Template;
 
-		console.log(`\nInitializing superharness in ${projectDir}\n`);
+		const isDefaultPlatform =
+			platforms.length === 1 && platforms[0] === "claude-code";
+
+		console.log("");
+		log(`正在初始化: ${pc.bold(projectDir)}`);
+		console.log("");
 
 		// 1. Create .superharness/ directory
 		createSuperHarnessDir(projectDir);
@@ -178,19 +203,29 @@ export const initCommand = new Command("init")
 		copyInitTemplates(projectDir, packageRoot);
 
 		// 4. Setup each platform
-		console.log("\nPlatform setup:");
+		console.log("");
+		if (isDefaultPlatform) {
+			log(
+				`平台: ${pc.bold("claude-code")} ${pc.dim("(默认，使用 --platforms 可更改)")}`,
+			);
+		} else {
+			log(`平台: ${pc.bold(platforms.join(", "))}`);
+		}
 		for (const platform of platforms) {
 			if (!PLATFORMS.includes(platform)) {
-				console.log(`  Warning: unknown platform "${platform}", skipping`);
+				logWarn(`未知平台 "${platform}"，已跳过`);
 				continue;
 			}
 			setupPlatform(platform, projectDir, packageRoot);
 		}
 
-		console.log("\nDone! Next steps:");
-		console.log(
-			'  1. In your AI tool, run: /superharness "your requirement"',
+		console.log("");
+		logSuccess("初始化完成!");
+		log(
+			`下一步: 在 AI 工具中运行 ${pc.bold('/superharness "你的需求"')}`,
 		);
-		console.log("  2. Edit .superharness/spec/ to customize project conventions");
+		log(
+			`编辑 ${pc.dim(".superharness/spec/")} 自定义项目规范`,
+		);
 		console.log("");
 	});
