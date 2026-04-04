@@ -1,6 +1,8 @@
 worktree_dir: .worktrees
-copy:
-  - .superharness/
+# copy 策略由 using-git-worktrees skill 控制：
+#   复制: spec/ + config.yaml + workflow.md + 当前任务目录
+#   不复制: 其他任务目录、workspace/ 日志
+#   worktree 中新建独立的 .current-task 指针
 post_create: []
 verify:
   - npm test

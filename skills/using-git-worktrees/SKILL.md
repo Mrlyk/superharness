@@ -122,14 +122,39 @@ path="$worktree_dir/$FEATURE_NAME"
 git worktree add "$path" -b "$branch_name"
 ```
 
-### 3. Copy Configuration Files
+### 3. Copy Minimal .superharness/ to Worktree
 
-If `copy` is defined in worktree.yaml, copy those files/directories into the new worktree:
+Copy only the files the worktree needs — NOT the entire `.superharness/` directory. This avoids duplicate task state and workspace logs that would confuse the user about which copy is authoritative.
 
 ```bash
-# Example: copy .superharness/ directory
-cp -r .superharness/ "$path/.superharness/"
+# Create minimal .superharness/ structure in worktree
+mkdir -p "$path/.superharness/tasks"
+
+# 1. Copy spec (needed for coding conventions)
+cp -r .superharness/spec/ "$path/.superharness/spec/"
+
+# 2. Copy config and workflow
+cp .superharness/config.yaml "$path/.superharness/config.yaml"
+cp .superharness/workflow.md "$path/.superharness/workflow.md"
+cp .superharness/worktree.yaml "$path/.superharness/worktree.yaml"
+
+# 3. Copy ONLY the current task directory (not all tasks)
+current_task=$(cat .superharness/tasks/.current-task 2>/dev/null)
+if [ -n "$current_task" ] && [ -d "$current_task" ]; then
+  cp -r "$current_task" "$path/$current_task"
+fi
+
+# 4. Create worktree's own .current-task pointer
+if [ -n "$current_task" ]; then
+  echo "$current_task" > "$path/.superharness/tasks/.current-task"
+fi
 ```
+
+**What is NOT copied:**
+- Other task directories (only the active task is relevant)
+- `workspace/` journals (session-specific, not needed in worktree)
+
+**Task state updates happen in the worktree.** When the worktree is merged back, the updated task.json in the worktree is the authoritative version.
 
 ### 4. Run Post-Create Commands
 
