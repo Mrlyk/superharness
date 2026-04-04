@@ -21,7 +21,7 @@ Invoke `superharness:brainstorm` skill to clarify requirements and produce a des
 
 Write trace event:
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"brainstorm","event":"start","detail":"User input: {requirement}"}' >> .superharness/tasks/{task}/trace.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"brainstorm","event":"start","detail":"用户输入: {requirement}"}' >> .superharness/tasks/{task}/trace.jsonl
 ```
 
 ### Step 2: Plan

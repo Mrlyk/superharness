@@ -178,10 +178,10 @@ Log brainstorm events to the task's `trace.jsonl`:
 
 ```bash
 # At the start of brainstorming
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"brainstorm","event":"brainstorm:start","detail":"User input: {requirement}"}' >> .superharness/tasks/{MM}-{DD}-{name}/trace.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"brainstorm","event":"brainstorm:start","detail":"用户输入: {requirement}"}' >> .superharness/tasks/{MM}-{DD}-{name}/trace.jsonl
 
 # When spec is confirmed by user
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"brainstorm","event":"brainstorm:spec_confirmed","detail":"Spec written to prd.md, task artifacts created"}' >> .superharness/tasks/{MM}-{DD}-{name}/trace.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"brainstorm","event":"brainstorm:spec_confirmed","detail":"需求文档已写入 prd.md，任务产物已创建"}' >> .superharness/tasks/{MM}-{DD}-{name}/trace.jsonl
 ```
 
 **Spec Self-Review:**

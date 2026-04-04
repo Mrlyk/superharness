@@ -205,7 +205,7 @@ Run verification commands from worktree.yaml, or auto-detect:
 ### 7. Log Trace Event
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"plan","event":"worktree_created","detail":"Worktree at '"$path"' on branch '"$branch_name"'"}' >> .superharness/tasks/{task}/trace.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"plan","event":"worktree_created","detail":"Worktree 已创建: '"$path"' 分支: '"$branch_name"'"}' >> .superharness/tasks/{task}/trace.jsonl
 ```
 
 ### 8. Report Location

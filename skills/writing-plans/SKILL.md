@@ -146,7 +146,7 @@ After writing the plan, update the task directory:
 
 3. **Log trace event:**
    ```bash
-   echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"plan","event":"plan:tasks_created","detail":"Plan written with {N} tasks, {N} sprints"}' >> .superharness/tasks/{MM}-{DD}-{name}/trace.jsonl
+   echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"plan","event":"plan:tasks_created","detail":"计划已创建: {N} 个任务, {N} 个 sprint"}' >> .superharness/tasks/{MM}-{DD}-{name}/trace.jsonl
    ```
 
 4. **Commit all updated files to git.**

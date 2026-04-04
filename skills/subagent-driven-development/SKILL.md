@@ -62,7 +62,7 @@ jq '.phase = "implement" | .updated_at = "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"' \
 Append to `.superharness/tasks/{task}/trace.jsonl` at each transition:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"implement","event":"task_start","detail":"Task N: {task name}"}' >> .superharness/tasks/{task}/trace.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"implement","event":"task_start","detail":"任务 N: {task name}"}' >> .superharness/tasks/{task}/trace.jsonl
 ```
 
 Required trace events per task:

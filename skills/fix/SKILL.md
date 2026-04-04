@@ -36,8 +36,8 @@ For each pending issue, in severity order:
 
 Log trace events:
 ```bash
-echo '{"ts":"...","phase":"fix","event":"fix_start","detail":"Fixing: {issue.id}"}' >> .superharness/tasks/{task}/trace.jsonl
-echo '{"ts":"...","phase":"fix","event":"fix_complete","detail":"Fixed: {issue.id}"}' >> .superharness/tasks/{task}/trace.jsonl
+echo '{"ts":"...","phase":"fix","event":"fix_start","detail":"修复中: {issue.id}"}' >> .superharness/tasks/{task}/trace.jsonl
+echo '{"ts":"...","phase":"fix","event":"fix_complete","detail":"已修复: {issue.id}"}' >> .superharness/tasks/{task}/trace.jsonl
 ```
 
 ### Step 3: Re-run QA
