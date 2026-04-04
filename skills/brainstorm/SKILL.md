@@ -22,13 +22,14 @@ Every project goes through this process. A todo list, a single-function utility,
 You MUST create a task for each of these items and complete them in order:
 
 1. **Explore project context + spec discovery** — check files, docs, recent commits. Also check if `.superharness/spec/` needs updating (see Spec Discovery below)
-2. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
-3. **Propose 2-3 approaches** — with trade-offs and your recommendation
-4. **Present design** — in sections scaled to their complexity, get user approval after each section
-5. **Write spec + task artifacts** — save spec to `.superharness/tasks/{MM}-{DD}-{name}/prd.md`, create `task.json` and `contract.md` in the same directory, commit all files
-6. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
-7. **User reviews written spec** — ask user to review the spec file before proceeding
-8. **Transition to implementation** — invoke `superharness:writing-plans` skill to create implementation plan
+2. **Start mindmap visualization** — invoke `superharness:mindmap` to start the visualization server (see Mindmap Visualization below)
+3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria. After each round, update the mindmap.
+4. **Propose 2-3 approaches** — with trade-offs and your recommendation. Update mindmap with chosen approach.
+5. **Present design** — in sections scaled to their complexity, get user approval after each section. Update mindmap with confirmed design.
+6. **Write spec + task artifacts** — save spec to `.superharness/tasks/{MM}-{DD}-{name}/prd.md`, create `task.json` and `contract.md` in the same directory, commit all files
+7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
+8. **User reviews written spec** — ask user to review the spec file before proceeding
+9. **Transition to implementation** — invoke `superharness:writing-plans` skill to create implementation plan
 
 ## Process Flow
 
@@ -96,6 +97,57 @@ On each brainstorm session, while exploring project context:
 - **Don't over-document.** Only record patterns that are genuinely project-wide conventions, not one-off choices in a single file.
 - **User confirms all writes.** Never silently update spec files.
 - **Don't delay brainstorming.** Spec discovery is a quick check (under 2 minutes), not a deep audit. If the codebase is large, focus on the most visible patterns and move on.
+
+## Mindmap Visualization (Step 2)
+
+Start the mindmap server early in the brainstorm process so the user can see the design evolve visually.
+
+### Starting
+
+After exploring project context (Step 1), invoke the `superharness:mindmap` skill:
+
+```bash
+bash skills/mindmap/scripts/start-server.sh --project-dir "$(pwd)"
+```
+
+Save the returned `url` and `content_dir`. Tell the user:
+> "I've started a visualization server. Open {url} in your browser to see the mindmap evolve as we clarify the design."
+
+### Updating
+
+After each clarification round, overwrite `current.mmd` with updated Markdown heading hierarchy:
+
+```bash
+cat > "$content_dir/current.mmd" << 'EOF'
+# 项目名称
+## 已确认功能
+### 功能 A
+### 功能 B
+## 待讨论
+### 功能 C (讨论中)
+## 技术选型
+### React + Zustand
+### Node.js API
+EOF
+```
+
+Always overwrite the same file `current.mmd`. The browser smoothly re-renders with animation transition, no page reload.
+
+### What to Show
+
+The mindmap should reflect the **current state of understanding**:
+- `#` root = project name
+- `##` branches = major modules/features
+- `###` leaves = specific features, decisions, constraints
+- Mark unresolved items with "(待定)" or "(讨论中)"
+- Mark confirmed items clearly
+- Include key technical decisions
+
+Use Chinese for all node names. Update after each clarification exchange. User can fold/unfold branches and zoom to explore.
+
+### When to Skip
+
+Skip the mindmap for truly trivial projects (single function, config change). The test: will the user benefit from seeing a visual overview? If the design fits in 3 sentences, skip it.
 
 ## The Process
 
