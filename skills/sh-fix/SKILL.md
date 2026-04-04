@@ -1,5 +1,5 @@
 ---
-name: fix
+name: sh-fix
 description: "Fix QA issues: reads qa-issues.json written by superharness qa, fixes each issue using TDD, then re-runs QA to verify."
 ---
 
@@ -9,7 +9,7 @@ Read `qa-issues.json` and fix pending issues using TDD, then re-run QA to verify
 
 ## Prerequisites
 
-`superharness qa` (CLI or `/superharness:qa` skill) must have already run and written `qa-issues.json` to the current task directory.
+`superharness qa` (CLI or `/superharness:sh-qa` skill) must have already run and written `qa-issues.json` to the current task directory.
 
 ## Process
 

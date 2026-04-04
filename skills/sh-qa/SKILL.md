@@ -1,5 +1,5 @@
 ---
-name: qa
+name: sh-qa
 description: "Wrapper skill that invokes the superharness qa CLI command from within the AI tool session."
 ---
 
@@ -32,7 +32,7 @@ Read and summarize `qa-report.md` for the user:
 ### Step 3: Suggest Next Action
 
 If issues were found:
-> "QA found {N} issues ({critical} critical, {major} major). Run `/superharness:fix` to address them."
+> "QA found {N} issues ({critical} critical, {major} major). Run `/superharness:sh-fix` to address them."
 
 If all passed:
 > "QA passed. Ready to finalize with `superharness:finishing-a-development-branch`."

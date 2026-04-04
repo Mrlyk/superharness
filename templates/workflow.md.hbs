@@ -2,13 +2,13 @@
 
 ## Development Flow
 
-1. `/superharness "requirement"` to start a new feature
+1. `/superharness:go "requirement"` to start a new feature
 2. Brainstorm phase clarifies requirements with user
 3. Planning phase creates task breakdown with Sprint Contract
 4. Implementation uses TDD (Red-Green-Refactor) per task
 5. Each task gets dual review: spec compliance + code quality
-6. QA evaluation (manual `superharness qa` or `/superharness:qa`)
-7. Fix issues with `/superharness:fix` if needed
+6. QA evaluation (manual `superharness qa` or `/superharness:sh-qa`)
+7. Fix issues with `/superharness:sh-fix` if needed
 8. Merge worktree when all tasks pass
 
 ## Conventions

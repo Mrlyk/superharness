@@ -58,8 +58,8 @@ Invoke `superharness:finishing-a-development-branch` skill:
 ### Step 6: QA (Optional)
 
 If the user wants QA evaluation:
-- Run `/superharness:qa` to trigger external QA services
-- If issues found: run `/superharness:fix` to address them
+- Run `/superharness:sh-qa` to trigger external QA services
+- If issues found: run `/superharness:sh-fix` to address them
 
 ## Task State Management
 

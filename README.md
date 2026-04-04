@@ -154,8 +154,8 @@ superharness trace --diff task1 task2                          # 对比两个 ta
 | 铁律 | `test-driven-development` | RED-GREEN-REFACTOR 循环 |
 | | `verification-before-completion` | 无证据不声明完成 |
 | | `systematic-debugging` | 根因优先 |
-| QA | `qa` | 调用外部 QA 服务，结果写入 `qa-issues.json` |
-| | `fix` | 搭配 `qa` 使用：读取 `qa-issues.json`，按 TDD 修复，完成后重跑 QA 验证 |
+| QA | `sh-qa` | 调用外部 QA 服务，结果写入 `qa-issues.json` |
+| | `sh-fix` | 搭配 `sh-qa` 使用：读取 `qa-issues.json`，按 TDD 修复，完成后重跑 QA 验证 |
 | 辅助 | `using-superharness` | 会话启动指引（hook 注入） |
 
 ## CLI 命令
