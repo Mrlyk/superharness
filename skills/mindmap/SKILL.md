@@ -12,8 +12,10 @@ Infrastructure skill for rendering interactive mindmaps in the browser via Markm
 ## Starting the Server
 
 ```bash
-bash skills/mindmap/scripts/start-server.sh --project-dir "$(pwd)"
+bash ${CLAUDE_SKILL_DIR}/scripts/start-server.sh --project-dir "$(pwd)"
 ```
+
+> If the path above doesn't resolve, the scripts are located relative to this SKILL.md file, under `scripts/start-server.sh`.
 
 The script outputs JSON on success:
 ```json
@@ -83,7 +85,7 @@ EOF
 The server stops automatically on idle. To force stop:
 
 ```bash
-bash skills/mindmap/scripts/stop-server.sh
+bash ${CLAUDE_SKILL_DIR}/scripts/stop-server.sh
 ```
 
 ## Rules

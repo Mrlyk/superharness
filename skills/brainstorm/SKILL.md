@@ -104,11 +104,9 @@ Start the mindmap server early in the brainstorm process so the user can see the
 
 ### Starting
 
-After exploring project context (Step 1), invoke the `superharness:mindmap` skill:
+After exploring project context (Step 1), invoke the `superharness:mindmap` skill. The mindmap skill handles server startup internally -- do NOT call the script directly from brainstorm.
 
-```bash
-bash skills/mindmap/scripts/start-server.sh --project-dir "$(pwd)"
-```
+Simply invoke `/superharness:mindmap` and it will start the server and return `{url, content_dir}`.
 
 Save the returned `url` and `content_dir`. Tell the user:
 > "I've started a visualization server. Open {url} in your browser to see the mindmap evolve as we clarify the design."

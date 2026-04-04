@@ -114,18 +114,33 @@ function listSkillDirs(packageRoot: string): string[] {
 }
 
 /**
- * Copy SKILL.md content as a flat .md file (for .claude/commands/ format).
- * Strips YAML frontmatter or keeps it depending on platform needs.
+ * Copy entire skill directory to commands/{namespace}/{name}/ (for platforms with commands + namespace).
+ * The SKILL.md stays as SKILL.md inside the directory. Claude Code discovers it as /namespace:name.
+ * Companion files (scripts/, templates/) are preserved alongside SKILL.md.
  */
-function copySkillAsCommand(
+function copySkillToCommands(
 	packageRoot: string,
 	skillName: string,
-	destPath: string,
+	commandsNamespaceDir: string,
+): void {
+	const srcDir = join(packageRoot, "skills", skillName);
+	const destDir = join(commandsNamespaceDir, skillName);
+	cpSync(srcDir, destDir, { recursive: true });
+}
+
+/**
+ * Copy SKILL.md as a flat prefixed .md file (for Cursor: no namespace subdirs).
+ */
+function copySkillFlat(
+	packageRoot: string,
+	skillName: string,
+	prefix: string,
+	destDir: string,
 ): void {
 	const srcPath = join(packageRoot, "skills", skillName, "SKILL.md");
 	const content = readFileSync(srcPath, "utf-8");
-	mkdirSync(dirname(destPath), { recursive: true });
-	writeFileSync(destPath, content);
+	mkdirSync(destDir, { recursive: true });
+	writeFileSync(join(destDir, `${prefix}-${skillName}.md`), content);
 }
 
 /**
@@ -196,15 +211,11 @@ function setupClaudeCode(projectDir: string, packageRoot: string): void {
 	const agentsDir = join(claudeDir, "agents");
 	const hooksDir = join(claudeDir, "hooks");
 
-	// 1. Copy skills as .claude/commands/superharness/*.md
+	// 1. Copy skills as .claude/commands/superharness/{name}/SKILL.md
 	mkdirSync(commandsDir, { recursive: true });
 	const skillNames = listSkillDirs(packageRoot);
 	for (const name of skillNames) {
-		copySkillAsCommand(
-			packageRoot,
-			name,
-			join(commandsDir, `${name}.md`),
-		);
+		copySkillToCommands(packageRoot, name, commandsDir);
 	}
 	logSuccess(
 		`Claude Code: 已复制 ${skillNames.length} 个 skill 到 .claude/commands/superharness/`,
@@ -315,11 +326,7 @@ function setupCursor(projectDir: string, packageRoot: string): void {
 
 	const skillNames = listSkillDirs(packageRoot);
 	for (const name of skillNames) {
-		copySkillAsCommand(
-			packageRoot,
-			name,
-			join(commandsDir, `superharness-${name}.md`),
-		);
+		copySkillFlat(packageRoot, name, "superharness", commandsDir);
 	}
 	logSuccess(
 		`Cursor: 已复制 ${skillNames.length} 个 skill 到 .cursor/commands/`,
