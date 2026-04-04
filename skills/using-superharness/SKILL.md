@@ -22,6 +22,8 @@ This guide is injected at the start of each AI session to establish how superhar
 | `superharness:finishing-a-development-branch` | Complete work: merge/PR/keep/discard |
 | `superharness:fix` | Fix QA issues from qa-issues.json |
 | `superharness:qa` | Trigger external QA evaluation |
+| `superharness:spec-discover` | Scan codebase, discover conventions, update .superharness/spec/ |
+| `superharness:mindmap` | Start visualization server for interactive mindmaps |
 
 ## Iron Laws (Non-Negotiable)
 

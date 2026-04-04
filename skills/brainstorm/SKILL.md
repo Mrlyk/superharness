@@ -60,43 +60,11 @@ digraph brainstorming {
 
 **The terminal state is invoking writing-plans.** Do NOT invoke frontend-design, mcp-builder, or any other implementation skill. The ONLY skill you invoke after brainstorming is `superharness:writing-plans`.
 
-## Spec Discovery (embedded in Step 1)
+## Spec Discovery (Step 1)
 
-During "Explore project context", also check whether `.superharness/spec/` needs updating. This is NOT a separate step — it happens as part of your normal project exploration.
+Invoke `superharness:spec-discover` to scan the project and update `.superharness/spec/` if needed. The spec-discover skill handles all the logic — detecting whether specs are skeletons or populated, scanning the codebase, presenting findings, and writing after user confirmation.
 
-### First Run (spec files are still skeletons)
-
-If `.superharness/spec/` files contain only TODO comments or empty checklists, scan the project and identify key patterns:
-
-1. **Scan key files**: package.json, tsconfig.json, config files, entry points, existing code structure
-2. **Identify patterns to document**:
-   - Tech stack (framework, language version, package manager)
-   - State management (zustand / redux / pinia / etc.)
-   - Testing framework and patterns (vitest / jest / pytest)
-   - API style (RESTful / GraphQL / tRPC)
-   - Code organization (layered architecture, module patterns)
-   - Styling approach (Tailwind / CSS Modules / styled-components)
-   - Error handling conventions
-   - Import/export patterns
-3. **Write discoveries into the corresponding spec files** (e.g., state management → `spec/components/state-management.md`)
-4. **Present a summary to the user**: "I've analyzed the codebase and found these conventions. Please confirm before I save them to spec."
-5. **Only write after user confirms.** If user rejects, skip and proceed with brainstorming.
-
-### Subsequent Runs (spec already populated)
-
-On each brainstorm session, while exploring project context:
-
-- If you notice a pattern that ISN'T in the spec files (e.g., a new error handling convention, a recently adopted library), mention it:
-  > "I noticed the project now uses [pattern X] which isn't in the spec. Should I update `.superharness/spec/[file]`?"
-- If user confirms → update the spec file and commit
-- If user declines → move on, don't block the brainstorm
-
-### Rules
-
-- **Record facts, not aspirations.** Write "project uses zustand for state management", NOT "state management should use zustand". Spec describes what IS, not what should be.
-- **Don't over-document.** Only record patterns that are genuinely project-wide conventions, not one-off choices in a single file.
-- **User confirms all writes.** Never silently update spec files.
-- **Don't delay brainstorming.** Spec discovery is a quick check (under 2 minutes), not a deep audit. If the codebase is large, focus on the most visible patterns and move on.
+Do NOT duplicate spec discovery logic here. Just invoke the skill and wait for it to complete before moving on.
 
 ## Mindmap Visualization (Step 2)
 

@@ -47,8 +47,20 @@ else
   # Wait for startup (max 5 seconds)
   for i in $(seq 1 50); do
     if grep -q "server-started" "$LOG_FILE" 2>/dev/null; then
-      # Output the startup JSON
-      grep "server-started" "$LOG_FILE" | head -1
+      STARTUP_JSON=$(grep "server-started" "$LOG_FILE" | head -1)
+      # stdout: JSON for AI consumption
+      echo "$STARTUP_JSON"
+      # stderr: human-readable banner
+      URL=$(echo "$STARTUP_JSON" | sed 's/.*"url":"\([^"]*\)".*/\1/')
+      echo "" >&2
+      echo "  ┌─────────────────────────────────────────┐" >&2
+      echo "  │  Superharness Mindmap 已启动             │" >&2
+      echo "  │                                         │" >&2
+      printf "  │  %-37s │\n" "$URL" >&2
+      echo "  │                                         │" >&2
+      echo "  │  空闲 5 分钟后自动关闭                   │" >&2
+      echo "  └─────────────────────────────────────────┘" >&2
+      echo "" >&2
       exit 0
     fi
     sleep 0.1
