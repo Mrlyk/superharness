@@ -235,12 +235,11 @@ function setupClaudeCode(projectDir: string, packageRoot: string): void {
 	logSuccess("Claude Code: 已合并 settings.json");
 }
 
-// ─── Aone Copilot: .aone_copilot/skills/ + .claude/skills/ ───
+// ─── Aone Copilot: .aone_copilot/skills/ + hooks/ ───
 
 function setupAoneCopilot(projectDir: string, packageRoot: string): void {
 	const skillNames = listSkillDirs(packageRoot);
 	const aoneSkillsDir = join(projectDir, ".aone_copilot", "skills");
-	const claudeSkillsDir = join(projectDir, ".claude", "skills");
 
 	// 1. Copy skills to .aone_copilot/skills/
 	for (const name of skillNames) {
@@ -250,11 +249,13 @@ function setupAoneCopilot(projectDir: string, packageRoot: string): void {
 		`Aone Copilot: 已复制 ${skillNames.length} 个 skill 到 .aone_copilot/skills/`,
 	);
 
-	// 2. Copy skills to .claude/skills/ (Aone reads both)
-	for (const name of skillNames) {
-		copySkillDir(packageRoot, name, claudeSkillsDir);
+	// 2. Copy hook script to .aone_copilot/hooks/
+	const hookSrc = join(packageRoot, "dist", "hooks", "session-start.js");
+	const hooksDir = join(projectDir, ".aone_copilot", "hooks");
+	if (existsSync(hookSrc)) {
+		mkdirSync(hooksDir, { recursive: true });
+		cpSync(hookSrc, join(hooksDir, "session-start.js"));
 	}
-	logSuccess("Aone Copilot: 已复制 skill 到 .claude/skills/");
 
 	// 3. Create .aone_copilot/hooks.json
 	const hooksConfig = {
@@ -262,7 +263,9 @@ function setupAoneCopilot(projectDir: string, packageRoot: string): void {
 		hooks: {
 			sessionStart: [
 				{
-					command: "node .claude/hooks/session-start.js",
+					type: "command",
+					command: "node .aone_copilot/hooks/session-start.js",
+					timeout: 10,
 				},
 			],
 		},
@@ -274,16 +277,6 @@ function setupAoneCopilot(projectDir: string, packageRoot: string): void {
 		JSON.stringify(hooksConfig, null, 2) + "\n",
 	);
 	logSuccess("Aone Copilot: 已创建 hooks.json");
-
-	// 4. Copy hook script to .claude/hooks/ (shared with Claude Code)
-	const hookSrc = join(packageRoot, "dist", "hooks", "session-start.js");
-	const hooksDir = join(projectDir, ".claude", "hooks");
-	if (existsSync(hookSrc)) {
-		mkdirSync(hooksDir, { recursive: true });
-		if (!existsSync(join(hooksDir, "session-start.js"))) {
-			cpSync(hookSrc, join(hooksDir, "session-start.js"));
-		}
-	}
 }
 
 // ─── Codex: .codex/skills/ ───
