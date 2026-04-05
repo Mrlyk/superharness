@@ -1,6 +1,6 @@
 ---
 name: spec-discover
-description: "Scan the project codebase and discover conventions, tech stack, and patterns. Update .superharness/spec/ with findings after user confirmation. Works in two modes: full discovery (when specs are empty) and incremental check (when specs exist but code has evolved). Invoke before any feature work to keep specs current, or run manually anytime. Triggers when brainstorm starts, when user asks to update conventions, or when you notice project patterns diverging from documented specs."
+description: "Scan the project codebase to discover conventions, tech stack, and patterns, then update .superharness/spec/. Primarily invoked by brainstorm as Step 1. Can also be run manually when the user asks to scan or re-scan the codebase for conventions."
 ---
 
 # Spec Discovery

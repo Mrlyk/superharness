@@ -157,6 +157,9 @@ superharness trace --diff task1 task2                          # 对比两个 ta
 | QA | `sh-qa` | 调用外部 QA 服务，结果写入 `qa-issues.json` |
 | | `sh-fix` | 搭配 `sh-qa` 使用：读取 `qa-issues.json`，按 TDD 修复，完成后重跑 QA 验证 |
 | 辅助 | `using-superharness` | 会话启动指引（hook 注入） |
+| | `spec-discover` | 扫描项目代码，发现约定并写入 spec（code → spec） |
+| | `spec-update` | 用户手动指定约定，保存到 spec（user → spec） |
+| | `mindmap` | 思维导图可视化（Markmap + WebSocket） |
 
 ## CLI 命令
 
