@@ -1,4 +1,4 @@
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, cpSync } from "node:fs";
 import { join } from "node:path";
 import { logSuccess } from "../utils/log.js";
 import { listSkillDirs, copySkillFlat, copyHookScripts } from "../utils/fs.js";
@@ -6,6 +6,7 @@ import { mergeHookConfig } from "../utils/hooks.js";
 
 export function setupCursor(projectDir: string, packageRoot: string): void {
 	const commandsDir = join(projectDir, ".cursor", "commands");
+	const agentsDir = join(projectDir, ".cursor", "agents");
 	mkdirSync(commandsDir, { recursive: true });
 
 	// 1. Copy skills (flat, prefix naming)
@@ -15,10 +16,17 @@ export function setupCursor(projectDir: string, packageRoot: string): void {
 	}
 	logSuccess(`Cursor: 已复制 ${skillNames.length} 个 skill 到 .cursor/commands/`);
 
-	// 2. Copy hook scripts
+	// 2. Copy agents
+	const agentsSrc = join(packageRoot, "agents");
+	if (existsSync(agentsSrc)) {
+		cpSync(agentsSrc, agentsDir, { recursive: true });
+		logSuccess("Cursor: 已复制 agent 到 .cursor/agents/");
+	}
+
+	// 3. Copy hook scripts
 	copyHookScripts(packageRoot, join(projectDir, ".cursor", "hooks"));
 
-	// 3. Create hooks.json
+	// 4. Create hooks.json
 	mergeHookConfig(
 		join(projectDir, ".cursor", "hooks.json"),
 		{

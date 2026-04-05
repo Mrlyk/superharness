@@ -7,7 +7,7 @@ Use this template when dispatching a spec compliance reviewer subagent.
 **Only dispatch after implementer reports DONE or DONE_WITH_CONCERNS.**
 
 ```
-Task tool (general-purpose):
+Task tool (check):
   description: "Review spec compliance for Task N: [task name]"
   prompt: |
     You are reviewing whether an implementation matches its specification.
