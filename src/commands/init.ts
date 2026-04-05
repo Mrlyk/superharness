@@ -17,7 +17,7 @@ const TEMPLATES = [
 ] as const;
 type Template = (typeof TEMPLATES)[number];
 
-function createSuperHarnessDir(projectDir: string): void {
+function createSuperHarnessDir(projectDir: string, packageRoot: string): void {
 	const shDir = join(projectDir, SUPERHARNESS_DIR);
 	for (const dir of [
 		shDir,
@@ -40,6 +40,15 @@ function createSuperHarnessDir(projectDir: string): void {
 				"workspace/",
 				"",
 			].join("\n"),
+		);
+	}
+
+	// Copy using-superharness skill for session-start hook injection
+	const usingSkillSrc = join(packageRoot, "skills", "using-superharness", "SKILL.md");
+	if (existsSync(usingSkillSrc)) {
+		writeFileSync(
+			join(shDir, "using-superharness.md"),
+			readFileSync(usingSkillSrc, "utf-8"),
 		);
 	}
 
@@ -113,7 +122,7 @@ export const initCommand = new Command("init")
 		log(`正在初始化: ${pc.bold(projectDir)}`);
 		console.log("");
 
-		createSuperHarnessDir(projectDir);
+		createSuperHarnessDir(projectDir, packageRoot);
 		copySpecTemplate(projectDir, template, packageRoot);
 		copyInitTemplates(projectDir, packageRoot);
 

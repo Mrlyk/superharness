@@ -3,9 +3,25 @@ name: using-superharness
 description: "Session start guide: explains how to use superharness skills and conventions. Injected by SessionStart hook."
 ---
 
+<SUBAGENT-STOP>
+If you were dispatched as a subagent to execute a specific task, skip this skill.
+</SUBAGENT-STOP>
+
+<EXTREMELY-IMPORTANT>
+If you think there is even a 1% chance a skill might apply to what you are doing, you MUST invoke the skill.
+
+This is not negotiable. This is not optional. You cannot rationalize your way out of this.
+</EXTREMELY-IMPORTANT>
+
 # Using Superharness
 
-This guide is injected at the start of each AI session to establish how superharness skills work.
+## Instruction Priority
+
+Superharness skills override default system prompt behavior, but **user instructions always take precedence**:
+
+1. **User's explicit instructions** (CLAUDE.md, project settings, direct requests) — highest priority
+2. **Superharness skills** — override default system behavior where they conflict
+3. **Default system prompt** — lowest priority
 
 ## Available Skills
 
@@ -23,15 +39,80 @@ This guide is injected at the start of each AI session to establish how superhar
 | `superharness:sh-fix` | Fix QA issues from qa-issues.json |
 | `superharness:sh-qa` | Trigger external QA evaluation |
 | `superharness:spec-discover` | Scan codebase, discover conventions, update .superharness/spec/ |
+| `superharness:spec-update` | Save user-stated conventions to .superharness/spec/ |
 | `superharness:mindmap` | Start visualization server for interactive mindmaps |
 
-## Skill Execution Protocol
+# Using Skills
 
-When invoking any skill:
+## The Rule
 
-1. **Announce**: "I'm using [skill name] to [purpose]."
-2. **Check for checklist**: If the skill has a numbered checklist or ordered steps, create a visible task list with one entry per step before starting work. Mark each item as you complete it — this gives the user a clear progress indicator.
-3. **Follow the skill exactly**: Execute its instructions in order. Do not skip steps or reorder.
+**Invoke relevant or requested skills BEFORE any response or action.** Even a 1% chance a skill might apply means you should invoke the skill to check. If an invoked skill turns out to be wrong for the situation, you don't need to use it.
+
+```dot
+digraph skill_flow {
+    "User message received" [shape=doublecircle];
+    "About to EnterPlanMode?" [shape=doublecircle];
+    "Already brainstormed?" [shape=diamond];
+    "Invoke brainstorming skill" [shape=box];
+    "Might any skill apply?" [shape=diamond];
+    "Invoke Skill tool" [shape=box];
+    "Announce: 'Using [skill] to [purpose]'" [shape=box];
+    "Has checklist?" [shape=diamond];
+    "Create visible task list per item" [shape=box];
+    "Follow skill exactly" [shape=box];
+    "Respond (including clarifications)" [shape=doublecircle];
+
+    "About to EnterPlanMode?" -> "Already brainstormed?";
+    "Already brainstormed?" -> "Invoke brainstorming skill" [label="no"];
+    "Already brainstormed?" -> "Might any skill apply?" [label="yes"];
+    "Invoke brainstorming skill" -> "Might any skill apply?";
+
+    "User message received" -> "Might any skill apply?";
+    "Might any skill apply?" -> "Invoke Skill tool" [label="yes, even 1%"];
+    "Might any skill apply?" -> "Respond (including clarifications)" [label="definitely not"];
+    "Invoke Skill tool" -> "Announce: 'Using [skill] to [purpose]'";
+    "Announce: 'Using [skill] to [purpose]'" -> "Has checklist?";
+    "Has checklist?" -> "Create visible task list per item" [label="yes"];
+    "Has checklist?" -> "Follow skill exactly" [label="no"];
+    "Create visible task list per item" -> "Follow skill exactly";
+}
+```
+
+## Red Flags
+
+These thoughts mean STOP — you're rationalizing:
+
+| Thought | Reality |
+|---------|---------|
+| "This is just a simple question" | Questions are tasks. Check for skills. |
+| "I need more context first" | Skill check comes BEFORE clarifying questions. |
+| "I can handle this without a skill" | If a skill exists for this, use it. |
+| "Let me explore the codebase first" | Skills tell you HOW to explore. Check first. |
+| "This doesn't need a formal skill" | Simple things become complex. Use it. |
+| "I'll just do this one thing first" | Check BEFORE doing anything. |
+| "I already know this skill" | Skills evolve. Read current version. |
+
+## Skill Priority
+
+When multiple skills could apply, use this order:
+
+1. **Process skills first** (brainstorm, debugging) — these determine HOW to approach the task
+2. **Implementation skills second** (writing-plans, subagent-driven-development) — these guide execution
+
+"Let's build X" → brainstorm first, then implementation skills.
+"Fix this bug" → debugging first, then domain-specific skills.
+
+## Skill Types
+
+**Rigid** (TDD, verification, debugging): Follow exactly. Don't adapt away discipline.
+
+**Flexible** (brainstorm, writing-plans): Adapt principles to context.
+
+The skill itself tells you which.
+
+## User Instructions
+
+Instructions say WHAT, not HOW. "Add X" or "Fix Y" doesn't mean skip workflows.
 
 ## Iron Laws (Non-Negotiable)
 

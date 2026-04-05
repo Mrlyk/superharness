@@ -54,10 +54,10 @@ function buildContext(projectDir: string): string {
 
 	const sections: string[] = [];
 
-	// 1. Workflow
-	const workflow = readFileOrNull(join(shDir, "workflow.md"));
-	if (workflow) {
-		sections.push(`<workflow>\n${workflow}\n</workflow>`);
+	// 1. Using-superharness skill (replaces workflow.md as the primary session context)
+	const usingSuperharness = readFileOrNull(join(shDir, "using-superharness.md"));
+	if (usingSuperharness) {
+		sections.push(`<EXTREMELY_IMPORTANT>\nYou have superharness.\n\nBelow is the full content of your 'using-superharness' skill — your guide to using skills. For all other skills, use the Skill tool:\n\n${usingSuperharness}\n</EXTREMELY_IMPORTANT>`);
 	}
 
 	// 2. Spec guidelines (index.md files only)
