@@ -3,229 +3,246 @@
 </h1>
 
 <p align="center">
-  <a href="https://code.alibaba-inc.com/btrip-fe/superharness">仓库</a> &bull;
-  <a href="https://aliyuque.antfin.com/liaoyikang.liaoyik/qzngta/ggo7owk3vlpcupgo">设计方案</a> &bull;
-  <a href="https://code.alibaba-inc.com/btrip-fe/superharness#快速开始">快速开始</a> &bull;
-  <a href="https://code.alibaba-inc.com/btrip-fe/superharness#多平台支持">多平台支持</a>
+  <a href="#getting-started">Getting Started</a> &bull;
+  <a href="#multi-platform-support">Multi-Platform</a> &bull;
+  <a href="#acknowledgements">Acknowledgements</a> &bull;
+  <a href="./README.zh-CN.md">中文文档</a>
 </p>
 
 <p align="center">
-<sub>驾驭你的 AI 编码工具</sub><br />
-  <sub>支持 Claude Code、Aone Copilot、Codex、Qoder、Cursor、Gemini CLI、GitHub Copilot</sub>
+<sub>Harness your AI coding tools &mdash; a tool-agnostic software engineering workflow engine</sub><br />
+  <sub>Works with Claude Code, Cursor, Codex, Qoder, Aone Copilot, Gemini CLI, GitHub Copilot</sub>
 </p>
 
-## 概述
+## What is this?
 
-Superharness 不是又一个 AI 编码工具，而是**注入到 AI 工具中的工作流程序**。它让你选择的 AI 工具按照经过验证的软件工程纪律工作：需求澄清 → 任务拆解 → TDD 实现 → 双阶段审查 → QA 验收，全程自动化。
+Superharness is not another AI coding tool. It's a **workflow program that runs inside your AI tool**. It makes your chosen AI coding agent follow proven software engineering discipline: requirement clarification → task decomposition → TDD implementation → two-stage review → QA validation, all automated.
 
-AI 编码工具很强大，但没有约束的强大是危险的：跳过测试、偏离需求、写出能跑但不可维护的代码、"完成"了但没人验证过。Superharness 把开发纪律变成机械强制的工作流，而不是靠 AI 自觉遵守的建议。
+AI coding tools are powerful, but unconstrained power is dangerous: skipping tests, drifting from requirements, writing code that runs but can't be maintained, declaring "done" without verification. Superharness turns development discipline into mechanically enforced workflows, not suggestions the AI can rationalize away.
 
-## 工作流程
+## How it works
 
 ```
-/superharness:go "做一个旅行规划 app"
+/superharness:go "Build a travel planning app"
 
-  1. 头脑风暴 ── 逐个问题澄清需求，提出 2-3 种方案，用户确认设计
-     （首次运行时自动扫描项目代码，生成基础规范到 .superharness/spec/）
-  2. 任务拆解 ── 生成 bite-sized 任务（每个 2-5 分钟），完整代码，精确路径
-  3. 隔离开发 ── 自动创建 git worktree，在独立分支上工作
-  4. TDD 实现 ── 每个任务：写失败测试 → 写实现 → 测试通过 → 提交
-  5. 双阶段审查 ── spec 合规审查 → 代码质量审查，不通过不往下走
-  6. QA 验收 ── 调用外部 QA 服务（可选），发现问题自动修复
-  7. 合并完成 ── 验证通过后合并 worktree，输出总结
+  1. Brainstorm ── Clarify requirements one question at a time, propose 2-3 approaches, user approves design
+     (First run: auto-scans codebase, generates conventions to .superharness/spec/)
+  2. Plan ── Generate bite-sized tasks (2-5 min each), complete code, precise file paths
+  3. Isolate ── Auto-create git worktree, work on isolated branch
+  4. TDD ── Per task: write failing test → implement → tests pass → commit
+  5. Review ── Spec compliance review → code quality review, blocks until both pass
+  6. QA ── External QA service (optional), auto-fix issues if found
+  7. Merge ── Merge worktree after all tasks pass, output summary
 ```
 
-整个过程由 AI 工具自主执行，你只需要在头脑风暴阶段参与决策。
+The AI tool runs autonomously through the entire process. You only participate during brainstorming.
 
-**小改动不需要走这个流程。** Session-start hook 在每次 AI 会话启动时自动将 `.superharness/spec/` 中的项目规范注入到上下文，AI 工具在任何对话中都会遵循这些规范。修一个 bug、调一个配置、改几行代码——直接说，不需要输入任何 superharness 命令。
+**Small changes don't need this workflow.** The session-start hook injects project conventions and the dispatch protocol into every AI session automatically. Fix a bug, tweak a config, change a few lines — just say it, no superharness commands needed.
 
-## 快速开始
+## Getting Started
 
 ```bash
-# 1. 安装
+# 1. Install
 npm install -g superharness
 
-# 2. 在项目中初始化（选择平台和规范模板）
+# 2. Initialize in your project (pick platform and spec template)
 superharness init --platforms claude-code --template frontend
 
-# 3. 在 AI 工具中使用
-/superharness:go "你的需求描述或需求链接"
+# 3. Use in your AI tool
+/superharness:go "your requirement or link to spec"
 ```
 
 <details>
-<summary><strong>参数说明</strong></summary>
+<summary><strong>Options</strong></summary>
 
-`--template` 可选值：
+`--template` values:
 
-| 模板 | 适用场景 |
-|------|---------|
-| `frontend` | Web 前端项目 |
-| `backend` | 后端 API 服务 |
-| `ai-agent` | AI Agent 应用 |
-| `fullstack` | 全栈项目 |
-| `blank` | 空模板，自定义 |
+| Template | Use case |
+|----------|---------|
+| `frontend` | Web frontend projects |
+| `backend` | Backend API services |
+| `ai-agent` | AI Agent applications |
+| `fullstack` | Full-stack projects |
+| `blank` | Empty template, customize yourself |
 
-`--platforms` 可选值：`claude-code`、`aone-copilot`、`codex`、`qoder`、`cursor`、`gemini`、`copilot`
+`--platforms` values: `claude-code`, `cursor`, `codex`, `qoder`, `aone-copilot`, `gemini`, `copilot`
 
-多个平台用逗号分隔：`--platforms claude-code,aone-copilot`
+Multiple platforms: `--platforms claude-code,cursor`
 
 </details>
 
-## 核心能力
+## Core Capabilities
 
-### 三条铁律
+### Three Iron Laws
 
-Superharness 的核心是三条不可协商的规则，每条都预设了"合理化借口"的反驳，防止 AI 自我说服绕过规则。
+The core of Superharness is three non-negotiable rules, each with pre-built rebuttals against the AI's rationalization attempts.
 
-| 铁律 | 规则 | 典型借口 / 反驳 |
-|------|------|----------------|
-| TDD | 没有失败测试就不写实现代码 | "太简单不用测试" / 简单代码也会坏，测试只要 30 秒 |
-| 验证 | 没有新鲜验证证据就不声明完成 | "应该能过" / "应该"不是证据，运行命令 |
-| 调试 | 没有根因调查就不尝试修复 | "先试着改改看" / 盲改只会浪费时间 |
+| Law | Rule | Typical excuse / Rebuttal |
+|-----|------|--------------------------|
+| TDD | No production code without a failing test first | "Too simple to test" / Simple code breaks too, tests take 30 seconds |
+| Verification | No completion claims without fresh evidence | "It should pass" / "Should" isn't evidence, run the command |
+| Debugging | No fix attempts without root cause investigation | "Let me try changing this" / Blind changes waste time |
 
-### Spec 自动发现与演进
+### Spec System
 
-项目规范不是一次性填写的静态文档，而是随项目演进持续更新的活文档。
+Project conventions are living documents that evolve with the codebase, not static templates filled once.
 
-- **首次运行**：扫描 package.json、配置文件、代码结构 → 识别框架、状态管理、测试工具、API 风格等 → 用户确认后写入 `.superharness/spec/`
-- **后续运行**：发现 spec 中未记录的新模式 → 提示"发现项目新增了 xxx 模式，是否更新到 spec？"
-- 只记录事实（"项目用 zustand"），不发明规则（"应该用 zustand"）
+- **spec-discover** (code → spec): Scans package.json, config files, source code → identifies framework, state management, testing tools, API patterns → writes to `.superharness/spec/` after user confirmation
+- **spec-update** (user → spec): User says "use zustand from now on" → converts to descriptive format → writes to spec → takes effect next session
+- Records facts ("project uses zustand"), doesn't invent rules ("must use zustand")
 
-### 中断恢复
+### Three-Level Hook System
 
-AI 工具 context 满了或 session 断开时，代码不会丢（git worktree），进度不会丢（task.json）。Session-start hook 自动检测未完成任务，AI 在会话开始时主动询问：
+| Hook | When | What |
+|------|------|------|
+| SessionStart | Every AI session start | Injects dispatch protocol + spec summaries + unfinished task recovery |
+| PreToolUse | Before subagent dispatch | Injects role-specific JSONL context (implement.jsonl / check.jsonl) |
+| SubagentStop | When check agent finishes | Ralph Loop: blocks if verify commands fail or completion markers missing |
 
-```
-检测到未完成任务：todo-app
-  Sprint 进度：2/5
-  当前任务：implement-auth（TDD-GREEN 阶段）
-  代码变更：3 个文件已修改
+### Session Recovery
 
-继续当前任务还是开始新的？
-```
+When AI context fills up or a session disconnects, code is safe (git worktree) and progress is safe (task.json). The session-start hook detects unfinished tasks and the AI asks whether to continue or start fresh.
 
-无需手动输入任何命令，所有平台均支持此机制。
+### Observability
 
-### 可观测性
-
-Superharness 在每个关键节点自动记录结构化日志到 `trace.jsonl`，用于事后分析工作流执行路径：
+Structured logs at every key transition in `trace.jsonl`:
 
 ```bash
-superharness trace --task .superharness/tasks/04-02-intent    # 查看执行路径摘要
-superharness trace --diff task1 task2                          # 对比两个 task 的路径差异
+superharness trace --task .superharness/tasks/04-02-intent    # Execution path summary
+superharness trace --diff task1 task2                          # Compare two task paths
 ```
 
-三步定位：trace-summary.md 找偏差 → trace.jsonl 找上下文 → 对比多个 task 找系统性问题。
+## Project Structure
 
-## 项目结构
-
-`superharness init` 在用户项目中创建 `.superharness/` 目录：
+`superharness init` creates a `.superharness/` directory in your project:
 
 ```
 .superharness/
-├── config.yaml                   # 项目配置（平台、QA 服务、可观测性）
-├── workflow.md                   # 工作流规则（注入到每次 AI 会话）
-├── worktree.yaml                 # Worktree 配置
-├── spec/                         # 项目规范（hook 自动注入）
+├── using-superharness.md             # Dispatch protocol (injected by session-start hook)
+├── config.yaml                       # Project config
+├── workflow.md                       # Workflow overview (human-readable reference)
+├── worktree.yaml                     # Worktree config
+├── spec/                             # Project conventions (hook injects index.md files)
 │   ├── guides/index.md
-│   └── {module}/index.md         # Pre-Dev Checklist + Quality Check
-├── tasks/                        # 任务管理
-│   ├── .current-task
+│   └── {module}/index.md
+├── tasks/                            # Task management
+│   ├── .current-task                 # (gitignored) Current task pointer
 │   └── {MM}-{DD}-{name}/
-│       ├── task.json             # 状态、phase、sprint 进度
-│       ├── prd.md                # 需求文档
-│       ├── contract.md           # Sprint Contract
-│       ├── trace.jsonl           # 过程日志
-│       ├── qa-report.md          # QA 报告
-│       └── qa-issues.json        # QA issues
-└── workspace/                    # 会话日志（per-developer，自动轮转）
+│       ├── task.json                 # Status, phase, sprint progress
+│       ├── prd.md                    # Requirements doc
+│       ├── contract.md               # Sprint contract
+│       ├── trace.jsonl               # Execution log
+│       ├── implement.jsonl           # Implement phase context
+│       ├── check.jsonl               # Review phase context
+│       └── qa-issues.json            # QA issues
+└── .gitignore                        # Excludes runtime state
 ```
 
-## Skill 一览
+## Skills
 
-| 分类 | Skill | 用途 |
-|------|-------|------|
-| 工作流 | `go` | 主入口：端到端工作流编排 |
-| | `brainstorm` | 需求澄清 + Spec 自动发现 |
-| | `writing-plans` | 任务拆解：bite-sized 任务、完整代码 |
-| | `subagent-driven-development` | 每任务新鲜 subagent + 双阶段审查 |
-| | `using-git-worktrees` | 隔离开发环境 |
-| | `finishing-a-development-branch` | merge/PR/keep/discard + trace 摘要 |
-| 铁律 | `test-driven-development` | RED-GREEN-REFACTOR 循环 |
-| | `verification-before-completion` | 无证据不声明完成 |
-| | `systematic-debugging` | 根因优先 |
-| QA | `sh-qa` | 调用外部 QA 服务，结果写入 `qa-issues.json` |
-| | `sh-fix` | 搭配 `sh-qa` 使用：读取 `qa-issues.json`，按 TDD 修复，完成后重跑 QA 验证 |
-| 辅助 | `using-superharness` | 会话启动指引（hook 注入） |
-| | `spec-discover` | 扫描项目代码，发现约定并写入 spec（code → spec） |
-| | `spec-update` | 用户手动指定约定，保存到 spec（user → spec） |
-| | `mindmap` | 思维导图可视化（Markmap + WebSocket） |
+| Category | Skill | Purpose |
+|----------|-------|---------|
+| Workflow | `go` | Main entry: end-to-end workflow orchestration |
+| | `brainstorm` | Requirement clarification + spec discovery + mindmap |
+| | `writing-plans` | Task decomposition: bite-sized tasks, complete code |
+| | `subagent-driven-development` | Fresh subagent per task + two-stage review |
+| | `using-git-worktrees` | Isolated development environments |
+| | `finishing-a-development-branch` | merge/PR/keep/discard + trace summary |
+| Iron Laws | `test-driven-development` | RED-GREEN-REFACTOR cycle |
+| | `verification-before-completion` | No claims without evidence |
+| | `systematic-debugging` | Root cause first |
+| QA | `sh-qa` | Call external QA service, write `qa-issues.json` |
+| | `sh-fix` | Read `qa-issues.json`, TDD fix, re-run QA |
+| Helper | `using-superharness` | Dispatch protocol (session-start hook injected) |
+| | `spec-discover` | Scan codebase for conventions (auto-called by brainstorm) |
+| | `spec-update` | Save user-stated conventions to spec |
+| | `mindmap` | Mindmap visualization (Markmap + WebSocket) |
 
-## CLI 命令
+## Agents
 
-| 命令 | 用途 |
-|------|------|
-| `superharness init` | 初始化项目 + 复制 skill 到各平台项目级目录 |
-| `superharness sync` | spec/skill 变更后重新同步到各平台 |
-| `superharness spec add` | 追加规范模板（monorepo） |
-| `superharness task list` | 查看任务进度 |
-| `superharness qa` | 调用外部 QA 服务 |
-| `superharness status` | 当前状态 |
-| `superharness journal` | 会话日志管理 |
-| `superharness trace` | 查看执行路径摘要 / 对比差异 |
+| Agent | Purpose | Dispatch |
+|-------|---------|----------|
+| `implement` | Implement tasks with TDD | `Task(subagent_type: "implement")` |
+| `check` | Review implementation (spec compliance / code quality) | `Task(subagent_type: "check")` |
+| `debug` | Root cause debugging | `Task(subagent_type: "debug")` |
+| `research` | Read-only investigation | `Task(subagent_type: "research")` |
+| `code-reviewer` | Standalone code review | `superpowers:code-reviewer` |
+| `spec-reviewer` | Standalone spec compliance review | Direct invoke |
 
-## 多平台支持
+## CLI Commands
 
-一套 skill 源文件，`superharness init` 时按目标平台做格式转换和路径适配。所有平台均支持 hook，spec 注入和中断恢复统一通过 session-start hook 实现。
+| Command | Purpose |
+|---------|---------|
+| `superharness init` | Initialize project + copy skills/agents/hooks to platform directories |
+| `superharness sync` | Re-sync after spec/skill changes |
+| `superharness spec add` | Add spec template (monorepo) |
+| `superharness task list` | View task progress |
+| `superharness qa` | Call external QA service |
+| `superharness status` | Current status |
+| `superharness trace` | View execution path summary / diff |
 
-| 平台 | 注入方式 | 入口命令 | Hook 配置 |
-|------|---------|---------|----------|
-| Claude Code | `.claude/commands/superharness/` | `/superharness:go` | `.claude/settings.json` |
-| Aone Copilot | `.aone_copilot/skills/` + `.claude/skills/` | SKILL.md 标准 | `.aone_copilot/hooks.json` |
-| Codex | `.codex/skills/` | SKILL.md 标准 | `.codex/hooks.json` |
-| Qoder | `.qoder/skills/` | SKILL.md 标准 | `.qoder/settings.json` |
-| Cursor | `.cursor/commands/` | `/superharness-go` | `.cursor/hooks.json` |
-| Gemini CLI | `.gemini/commands/` | `/superharness:go` | `.gemini/settings.json` |
-| GitHub Copilot | `~/.copilot/skills/` | SKILL.md 标准 | 待确认 |
+## Multi-Platform Support
 
-Aone Copilot 兼容 `.claude/settings.json` 和 `.cursor/hooks.json` 格式，已有配置可直接复用。
+One set of skill source files, `superharness init` adapts format and paths per platform.
 
-## 外部 QA 服务
+| Platform | Skill Directory | Agent Directory | Hook Support |
+|----------|----------------|-----------------|-------------|
+| Claude Code | `.claude/commands/superharness/` | `.claude/agents/` | SessionStart + PreToolUse + SubagentStop |
+| Cursor | `.cursor/commands/` | `.cursor/agents/` | sessionStart + preToolUse + subagentStop |
+| Aone Copilot | `.aone_copilot/skills/` | — | sessionStart + preToolUse + stop |
+| Codex | `.codex/skills/` | — | — |
+| Qoder | `.qoder/skills/` | — | — |
+| Gemini CLI | `.gemini/commands/` (Phase 4) | — | BeforeTool + AfterResponse |
+| GitHub Copilot | `~/.copilot/skills/` | — | TBD |
 
-Superharness 本身不调用任何大模型。QA 层完全由外部服务提供，支持两种模式：
+## External QA
+
+Superharness does not call any LLM itself. The QA layer is entirely provided by external services:
 
 ```yaml
 # .superharness/config.yaml
 qa:
   services:
     - name: ai-agent-qa
-      type: managed           # 托管模式：POST /evaluate，服务自主设计用例
+      type: managed           # Managed mode: POST /evaluate, service designs test cases
       endpoint: http://localhost:8080
     - name: frontend-e2e
-      type: autonomous        # 自治模式：执行命令 + 读结果文件
+      type: autonomous        # Autonomous mode: run command + read result file
       command: npm run qa:e2e
       output: .superharness/tasks/{task}/qa-results-e2e.json
 ```
 
-防振荡机制：最大 3 轮修复 → 回归检测（severity 自动提升）→ 超限升级为人工介入。
+Anti-oscillation: max 3 fix rounds → regression detection (auto severity escalation) → escalate to human.
 
-## 技术栈
+## Acknowledgements
 
-| 组件 | 技术 |
-|------|------|
-| 语言 | TypeScript / Node.js 20+ |
+Superharness is built on [Superpowers](https://github.com/obra/superpowers) (MIT) and draws workflow infrastructure from [Trellis](https://github.com/Mindfold/trellis).
+
+**Inherited from Superpowers**: SKILL.md format, three Iron Laws (TDD / Verification / Debugging), Brainstorm → Writing-plans → Subagent-driven-development workflow, HARD-GATE, rationalization rebuttal system, two-stage review.
+
+**Architectural differences**:
+
+| Dimension | Superpowers | Superharness |
+|-----------|------------|-------------|
+| Delivery | Claude Code plugin | npm package + CLI, tool-agnostic |
+| Platforms | Primarily Claude Code | 7 platforms with unified adaptation |
+| Hooks | SessionStart only | SessionStart + PreToolUse + SubagentStop (3-level) |
+| Agents | 1 custom (code-reviewer) | 6 custom (implement/check/debug/research + code-reviewer/spec-reviewer) |
+
+**Added capabilities**: Spec system (spec-discover + spec-update), PreToolUse JSONL context auto-injection, Ralph Loop (SubagentStop prevents premature completion), Task system (task.json + trace.jsonl + session recovery), Markmap mindmap, external QA integration (managed/autonomous + anti-oscillation), Trace observability.
+
+**Improvements**: Inline spec self-review from day one (Superpowers switched to inline in v5.0.6); registered custom agents + hook auto-injection (Superpowers uses general-purpose + inline prompts); Visual Companion replaced with standalone mindmap skill.
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Language | TypeScript / Node.js 20+ |
 | CLI | commander |
-| 构建 | tsup |
-| 测试 | vitest |
-| Skill | Fork [Superpowers](https://github.com/obra/superpowers)（MIT），深度改造 |
-| Hook | TS → tsup 编译 → node 执行 |
+| Build | tsup |
+| Test | vitest |
+| Hooks | TS → tsup compile → node execute |
 
-## 许可证
+## License
 
 MIT License
-
-<p align="center">
-  <a href="https://code.alibaba-inc.com/btrip-fe/superharness">仓库</a> &bull;
-  <a href="https://aliyuque.antfin.com/liaoyikang.liaoyik/qzngta/ggo7owk3vlpcupgo">设计方案</a> &bull;
-  作者：<a href="mailto:liaoyikang.liaoyik@alibaba-inc.com">宜行</a>
-</p>
