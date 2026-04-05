@@ -26,8 +26,8 @@
     "lint:fix": "biome check --write ."
   },
     "author": {
-    "name": "宜行",
-    "email": "liaoyikang.liaoyik@alibaba-inc.com"
+    "name": "Mrlyk",
+    "email": "liaoyk_code@qq.com"
   },
   "keywords": [
     "ai",

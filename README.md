@@ -3,6 +3,12 @@
 </h1>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/superharness"><img src="https://img.shields.io/npm/v/superharness.svg" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/superharness"><img src="https://img.shields.io/npm/dm/superharness.svg" alt="npm downloads" /></a>
+  <a href="https://github.com/Mrlyk/superharness/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/superharness.svg" alt="license" /></a>
+</p>
+
+<p align="center">
   <a href="#getting-started">Getting Started</a> &bull;
   <a href="#multi-platform-support">Multi-Platform</a> &bull;
   <a href="#acknowledgements">Acknowledgements</a> &bull;
