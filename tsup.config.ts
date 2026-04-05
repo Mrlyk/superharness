@@ -13,7 +13,11 @@ export default defineConfig([
     banner: { js: "#!/usr/bin/env node" },
   },
   {
-    entry: { "hooks/session-start": "src/hooks/session-start.ts" },
+    entry: {
+      "hooks/session-start": "src/hooks/session-start.ts",
+      "hooks/pre-tool-use": "src/hooks/pre-tool-use.ts",
+      "hooks/subagent-stop": "src/hooks/subagent-stop.ts",
+    },
     format: ["esm"],
     target: "node20",
     outDir: "dist",

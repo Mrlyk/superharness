@@ -50,17 +50,9 @@ else
       STARTUP_JSON=$(grep "server-started" "$LOG_FILE" | head -1)
       # stdout: JSON for AI consumption
       echo "$STARTUP_JSON"
-      # stderr: human-readable banner
+      # stderr: one-line human-readable message (AI tools only show first line)
       URL=$(echo "$STARTUP_JSON" | sed 's/.*"url":"\([^"]*\)".*/\1/')
-      echo "" >&2
-      echo "  ┌─────────────────────────────────────────┐" >&2
-      echo "  │  Superharness Mindmap 已启动             │" >&2
-      echo "  │                                         │" >&2
-      printf "  │  %-37s │\n" "$URL" >&2
-      echo "  │                                         │" >&2
-      echo "  │  空闲 5 分钟后自动关闭                   │" >&2
-      echo "  └─────────────────────────────────────────┘" >&2
-      echo "" >&2
+      echo "Superharness Mindmap 已启动: $URL" >&2
       exit 0
     fi
     sleep 0.1

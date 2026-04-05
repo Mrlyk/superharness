@@ -30,6 +30,7 @@ function readFileOrNull(path: string): string | null {
 function collectIndexFiles(specDir: string): string[] {
 	const results: string[] = [];
 
+	// Only inject directory files, which describe the specific spec file paths, to avoid overloading the context
 	function walk(dir: string): void {
 		if (!existsSync(dir)) return;
 		for (const entry of readdirSync(dir)) {

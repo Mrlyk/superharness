@@ -39,40 +39,43 @@ digraph when_to_use {
 - Two-stage review after each task: spec compliance first, then code quality
 - Faster iteration (no human-in-loop between tasks)
 
-## Task State and Trace Logging
+## Hook Automation (No Manual Action Needed)
 
-Throughout execution, keep `task.json` phase updated and write trace events.
+PreToolUse and SubagentStop hooks handle the following automatically in the background -- you do **NOT** need to do these manually:
 
-### Phase Updates
+- **Phase tracking**: task.json `phase` field updates automatically on each subagent dispatch (implement → check → complete)
+- **Trace logging**: trace.jsonl events are written automatically on each phase transition
+- **JSONL context injection**: PreToolUse hook reads the corresponding JSONL file (implement.jsonl / check.jsonl) and injects referenced file contents into the subagent prompt
 
-Update the `phase` field in `.superharness/tasks/{task}/task.json` as work progresses:
+Your only job: **dispatch subagents with the correct `subagent_type` parameter**.
 
-- `implement` -- when dispatching implementer subagent
-- `check` -- when dispatching spec or code quality reviewer
-- `complete` -- when both reviews pass and task is marked done
+## Dispatch Syntax
 
-```bash
-# Example: update phase to "implement"
-jq '.phase = "implement" | .updated_at = "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"' \
-  .superharness/tasks/{task}/task.json > tmp.$$.json && mv tmp.$$.json .superharness/tasks/{task}/task.json
+You **MUST** specify `subagent_type` when dispatching subagents. This is how hooks identify the agent type:
+
+```
+Task(
+  subagent_type: "implement",
+  prompt: "Full task text + scene-setting context"
+)
+
+Task(
+  subagent_type: "check",
+  prompt: "Review the implementation for spec compliance"
+)
 ```
 
-### Trace Events
+Available subagent_type values:
+- `"implement"` -- Implementation agent (hook injects implement.jsonl context)
+- `"check"` -- Review agent (hook injects check.jsonl context; SubagentStop hook runs Ralph Loop)
+- `"debug"` -- Debug agent (hook injects debug.jsonl context)
+- `"research"` -- Research agent (lightweight context, no active task required)
 
-Append to `.superharness/tasks/{task}/trace.jsonl` at each transition:
+If you omit `subagent_type`, hooks will NOT inject JSONL context. The subagent will only have whatever you manually provide in the prompt.
 
-```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","phase":"implement","event":"task_start","detail":"任务 N: {task name}"}' >> .superharness/tasks/{task}/trace.jsonl
-```
+## Cross-Platform Degradation
 
-Required trace events per task:
-
-| Event | When |
-|-------|------|
-| `implement:task_start` | Before dispatching implementer subagent |
-| `check:spec_review` | Before dispatching spec reviewer (include pass/fail in detail) |
-| `check:code_review` | Before dispatching code quality reviewer (include pass/fail in detail) |
-| `implement:task_complete` | After both reviews pass and task is marked done |
+If context was NOT automatically injected (you don't see `--- .superharness/spec/ ---` markers in the subagent prompt), the current platform's hook doesn't support PreToolUse for Task/Agent tools. In this case, manually read the files listed in `.superharness/tasks/{task}/implement.jsonl` (or check.jsonl) and include their contents in the subagent prompt.
 
 ## The Process
 
@@ -82,50 +85,42 @@ digraph process {
 
     subgraph cluster_per_task {
         label="Per Task";
-        "Log implement:task_start + update phase to implement" [shape=box style=filled fillcolor=lightyellow];
-        "Dispatch implementer subagent (./implementer-prompt.md)" [shape=box];
-        "Implementer subagent asks questions?" [shape=diamond];
-        "Answer questions, provide context" [shape=box];
-        "Implementer subagent implements, tests, commits, self-reviews" [shape=box];
-        "Log check:spec_review + update phase to check" [shape=box style=filled fillcolor=lightyellow];
-        "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [shape=box];
-        "Spec reviewer subagent confirms code matches spec?" [shape=diamond];
-        "Implementer subagent fixes spec gaps" [shape=box];
-        "Log check:code_review" [shape=box style=filled fillcolor=lightyellow];
-        "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [shape=box];
-        "Code quality reviewer subagent approves?" [shape=diamond];
-        "Implementer subagent fixes quality issues" [shape=box];
-        "Log implement:task_complete + update phase to complete" [shape=box style=filled fillcolor=lightyellow];
+        "Task(subagent_type: implement)" [shape=box];
+        "Implementer asks questions?" [shape=diamond];
+        "Answer questions, re-dispatch" [shape=box];
+        "Implementer implements + TDD + commits" [shape=box];
+        "Task(subagent_type: check) -- spec reviewer" [shape=box];
+        "Spec compliant?" [shape=diamond];
+        "Implementer fixes spec gaps" [shape=box];
+        "Task(subagent_type: check) -- code quality" [shape=box];
+        "Quality approved?" [shape=diamond];
+        "Implementer fixes quality issues" [shape=box];
         "Mark task complete in TodoWrite" [shape=box];
     }
 
     "Read plan from .superharness/tasks/{task}/plan.md" [shape=box];
     "More tasks remain?" [shape=diamond];
-    "Dispatch final code reviewer subagent for entire implementation" [shape=box];
+    "Task(subagent_type: check) -- final review" [shape=box];
     "Use superharness:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
-    "Read plan from .superharness/tasks/{task}/plan.md" -> "Log implement:task_start + update phase to implement";
-    "Log implement:task_start + update phase to implement" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer subagent asks questions?";
-    "Implementer subagent asks questions?" -> "Answer questions, provide context" [label="yes"];
-    "Answer questions, provide context" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Implementer subagent asks questions?" -> "Implementer subagent implements, tests, commits, self-reviews" [label="no"];
-    "Implementer subagent implements, tests, commits, self-reviews" -> "Log check:spec_review + update phase to check";
-    "Log check:spec_review + update phase to check" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)";
-    "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" -> "Spec reviewer subagent confirms code matches spec?";
-    "Spec reviewer subagent confirms code matches spec?" -> "Implementer subagent fixes spec gaps" [label="no"];
-    "Implementer subagent fixes spec gaps" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [label="re-review"];
-    "Spec reviewer subagent confirms code matches spec?" -> "Log check:code_review" [label="yes"];
-    "Log check:code_review" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)";
-    "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" -> "Code quality reviewer subagent approves?";
-    "Code quality reviewer subagent approves?" -> "Implementer subagent fixes quality issues" [label="no"];
-    "Implementer subagent fixes quality issues" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="re-review"];
-    "Code quality reviewer subagent approves?" -> "Log implement:task_complete + update phase to complete" [label="yes"];
-    "Log implement:task_complete + update phase to complete" -> "Mark task complete in TodoWrite";
+    "Read plan from .superharness/tasks/{task}/plan.md" -> "Task(subagent_type: implement)";
+    "Task(subagent_type: implement)" -> "Implementer asks questions?";
+    "Implementer asks questions?" -> "Answer questions, re-dispatch" [label="yes"];
+    "Answer questions, re-dispatch" -> "Task(subagent_type: implement)";
+    "Implementer asks questions?" -> "Implementer implements + TDD + commits" [label="no"];
+    "Implementer implements + TDD + commits" -> "Task(subagent_type: check) -- spec reviewer";
+    "Task(subagent_type: check) -- spec reviewer" -> "Spec compliant?";
+    "Spec compliant?" -> "Implementer fixes spec gaps" [label="no"];
+    "Implementer fixes spec gaps" -> "Task(subagent_type: check) -- spec reviewer" [label="re-review"];
+    "Spec compliant?" -> "Task(subagent_type: check) -- code quality" [label="yes"];
+    "Task(subagent_type: check) -- code quality" -> "Quality approved?";
+    "Quality approved?" -> "Implementer fixes quality issues" [label="no"];
+    "Implementer fixes quality issues" -> "Task(subagent_type: check) -- code quality" [label="re-review"];
+    "Quality approved?" -> "Mark task complete in TodoWrite" [label="yes"];
     "Mark task complete in TodoWrite" -> "More tasks remain?";
-    "More tasks remain?" -> "Log implement:task_start + update phase to implement" [label="yes - next task"];
-    "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final code reviewer subagent for entire implementation" -> "Use superharness:finishing-a-development-branch";
+    "More tasks remain?" -> "Task(subagent_type: implement)" [label="yes - next task"];
+    "More tasks remain?" -> "Task(subagent_type: check) -- final review" [label="no"];
+    "Task(subagent_type: check) -- final review" -> "Use superharness:finishing-a-development-branch";
 }
 ```
 
@@ -179,80 +174,54 @@ You: I'm using the subagent-driven-development skill to execute tasks from the p
 
 Task 1: Hook installation script
 
-[Log trace: implement:task_start]
-[Update task.json phase: implement]
-[Get Task 1 text and context (already extracted)]
-[Dispatch implementation subagent with full task text + context]
+[Dispatch: Task(subagent_type: "implement", prompt: "Task 1 full text + scene-setting context")]
+# → PreToolUse hook auto-injects implement.jsonl context + updates phase + writes trace
 
 Implementer: "Before I begin - should the hook be installed at user or system level?"
-
 You: "User level (~/.config/superharness/hooks/)"
 
-Implementer: "Got it. Implementing now..."
-[Later] Implementer:
+Implementer:
   - Implemented install-hook command
   - Added tests, 5/5 passing
-  - Self-review: Found I missed --force flag, added it
   - Committed
 
-[Log trace: check:spec_review]
-[Update task.json phase: check]
-[Dispatch spec compliance reviewer]
-Spec reviewer: Spec compliant - all requirements met, nothing extra
+[Dispatch: Task(subagent_type: "check", prompt: "Review Task 1 for spec compliance")]
+# → hook auto-injects check.jsonl context
+Spec reviewer: Spec compliant - all requirements met
 
-[Log trace: check:code_review]
-[Get git SHAs, dispatch code quality reviewer]
-Code reviewer: Strengths: Good test coverage, clean. Issues: None. Approved.
+[Dispatch: Task(subagent_type: "check", prompt: "Review Task 1 code quality")]
+Code reviewer: Approved.
+# → SubagentStop hook (Ralph Loop) checks verification markers, allows stop if all pass
 
-[Log trace: implement:task_complete]
-[Update task.json phase: complete]
 [Mark Task 1 complete]
 
 Task 2: Recovery modes
 
-[Log trace: implement:task_start]
-[Update task.json phase: implement]
-[Get Task 2 text and context (already extracted)]
-[Dispatch implementation subagent with full task text + context]
-
-Implementer: [No questions, proceeds]
+[Dispatch: Task(subagent_type: "implement", prompt: "Task 2 full text")]
 Implementer:
   - Added verify/repair modes
   - 8/8 tests passing
-  - Self-review: All good
-  - Committed
 
-[Log trace: check:spec_review]
-[Update task.json phase: check]
-[Dispatch spec compliance reviewer]
+[Dispatch: Task(subagent_type: "check", prompt: "Review Task 2 spec compliance")]
 Spec reviewer: Issues:
-  - Missing: Progress reporting (spec says "report every 100 items")
-  - Extra: Added --json flag (not requested)
+  - Missing: Progress reporting
+  - Extra: --json flag not requested
 
-[Implementer fixes issues]
-Implementer: Removed --json flag, added progress reporting
-
-[Spec reviewer reviews again]
+[Implementer fixes → re-dispatch check]
 Spec reviewer: Spec compliant now
 
-[Log trace: check:code_review]
-[Dispatch code quality reviewer]
-Code reviewer: Strengths: Solid. Issues (Important): Magic number (100)
+[Dispatch: Task(subagent_type: "check", prompt: "Review Task 2 code quality")]
+Code reviewer: Issues: Magic number (100)
 
-[Implementer fixes]
-Implementer: Extracted PROGRESS_INTERVAL constant
-
-[Code reviewer reviews again]
+[Implementer fixes → re-dispatch check]
 Code reviewer: Approved
 
-[Log trace: implement:task_complete]
-[Update task.json phase: complete]
 [Mark Task 2 complete]
 
 ...
 
 [After all tasks]
-[Dispatch final code-reviewer]
+[Dispatch: Task(subagent_type: "check", prompt: "Final full code review")]
 Final reviewer: All requirements met, ready to merge
 
 Done! Invoke superharness:finishing-a-development-branch
@@ -305,7 +274,7 @@ Done! Invoke superharness:finishing-a-development-branch
 - Let implementer self-review replace actual review (both are needed)
 - **Start code quality review before spec compliance passes** (wrong order)
 - Move to next task while either review has open issues
-- Skip trace logging or phase updates (observability is not optional)
+- Omit `subagent_type` when dispatching subagents (hooks won't inject context without it)
 
 **If subagent asks questions:**
 - Answer clearly and completely
