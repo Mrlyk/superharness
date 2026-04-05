@@ -99,6 +99,86 @@ Superharness 的核心是三条不可协商的规则，每条都预设了"合理
 | PreToolUse | 子 agent dispatch 前 | 按角色（implement/check/debug）注入对应 JSONL 上下文 |
 | SubagentStop | check agent 完成时 | Ralph Loop：验证命令未通过或完成标记缺失则 block |
 
+### QA 系统
+
+Superharness 将 QA 从 AI 工具中分离出来——QA 由外部服务执行，通过文件协议串联整个流程。这是核心差异化设计：AI 写代码，外部系统评判质量，结构化文件契约连接两者。
+
+**两个命令，一个闭环：**
+
+```
+/superharness:sh-qa     →  调用外部 QA 服务  →  写入 qa-issues.json
+/superharness:sh-fix    →  读取 qa-issues.json  →  按 TDD 逐个修复  →  重跑 sh-qa
+```
+
+修复后仍有问题则循环继续（最多 3 轮）。回归问题自动提升 severity。3 轮用完或连续两次回归，剩余问题升级为人工介入。
+
+**注册 QA 服务**，在 `.superharness/config.yaml` 中配置：
+
+```yaml
+qa:
+  max_fix_rounds: 3        # 防振荡：每个 issue 最多修复轮次
+  services:
+    # 托管模式：POST 请求到服务端，服务自主设计用例
+    - name: ai-agent-qa
+      type: managed
+      endpoint: http://localhost:8080
+
+    # 自治模式：执行命令，读取结果文件
+    - name: frontend-e2e
+      type: autonomous
+      command: npm run qa:e2e
+      output: .superharness/tasks/{task}/qa-results-e2e.json
+```
+
+两种服务类型：
+- **managed（托管）**—— Superharness 发送 POST 请求，附带任务上下文；服务端自主运行测试用例并返回结果
+- **autonomous（自治）**—— Superharness 执行一条命令（如 E2E 测试套件），然后读取输出文件
+
+**文件协议 — `qa-issues.json`：**
+
+所有 QA 服务将结果写入任务目录下的统一 `qa-issues.json`。这是 QA 与修复之间的契约：
+
+```json
+[
+  {
+    "id": "qa-001",
+    "severity": "critical",
+    "category": "logic-error",
+    "file": "src/planner/schedule.ts",
+    "line": 42,
+    "message": "Off-by-one: loop skips last day of trip",
+    "fix_hint": "Change < to <= in the for-loop condition",
+    "status": "pending",
+    "fix_round": 0
+  },
+  {
+    "id": "qa-002",
+    "severity": "major",
+    "category": "missing-validation",
+    "file": "src/api/trips.ts",
+    "line": 15,
+    "message": "No input validation on date range — negative durations accepted",
+    "fix_hint": "Add guard: if (end <= start) throw",
+    "status": "pending",
+    "fix_round": 0
+  }
+]
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | string | 唯一标识 |
+| `severity` | `"critical"` \| `"major"` \| `"minor"` \| `"suggestion"` | 修复优先级顺序 |
+| `category` | string | 问题分类（如 `logic-error`、`missing-validation`、`perf`） |
+| `file` | string | 文件路径 |
+| `line` | number | 行号 |
+| `message` | string | 问题描述 |
+| `fix_hint` | string | 修复建议 |
+| `status` | `"pending"` \| `"fixed"` \| `"escalated"` | sh-fix 在修复过程中更新 |
+| `fix_round` | number | 每次修复尝试 +1；超过 `max_fix_rounds` → escalated |
+
+`sh-fix` 按 severity 顺序处理（critical → major → minor），每个 issue 走 TDD 流程（写失败测试 → 修复 → 验证），原地更新 `status` 和 `fix_round`，然后重跑 `sh-qa` 检查回归。suggestion 级别的问题不会自动修复。
+
 ### 中断恢复
 
 AI 工具 context 满了或 session 断开时，代码不会丢（git worktree），进度不会丢（task.json）。Session-start hook 自动检测未完成任务，AI 在会话开始时主动询问是继续还是开始新任务。
@@ -194,25 +274,6 @@ superharness trace --diff task1 task2                          # 对比两个 ta
 | Qoder | `.qoder/skills/` | — | — |
 | Gemini CLI | `.gemini/commands/` (Phase 4) | — | BeforeTool + AfterResponse |
 | GitHub Copilot | `~/.copilot/skills/` | — | 待确认 |
-
-## 外部 QA 服务
-
-Superharness 本身不调用任何大模型。QA 层完全由外部服务提供：
-
-```yaml
-# .superharness/config.yaml
-qa:
-  services:
-    - name: ai-agent-qa
-      type: managed           # 托管模式：POST /evaluate，服务自主设计用例
-      endpoint: http://localhost:8080
-    - name: frontend-e2e
-      type: autonomous        # 自治模式：执行命令 + 读结果文件
-      command: npm run qa:e2e
-      output: .superharness/tasks/{task}/qa-results-e2e.json
-```
-
-防振荡机制：最大 3 轮修复 → 回归检测（severity 自动提升）→ 超限升级为人工介入。
 
 ## 致谢与差异
 

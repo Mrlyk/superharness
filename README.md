@@ -99,6 +99,86 @@ Project conventions are living documents that evolve with the codebase, not stat
 | PreToolUse | Before subagent dispatch | Injects role-specific JSONL context (implement.jsonl / check.jsonl) |
 | SubagentStop | When check agent finishes | Ralph Loop: blocks if verify commands fail or completion markers missing |
 
+### QA System
+
+Superharness separates QA from the AI tool itself — QA is performed by external services, with a file-based protocol connecting everything. This is a key differentiator: the AI writes code, external systems judge quality, and a structured file contract bridges the two.
+
+**Two commands, one loop:**
+
+```
+/superharness:sh-qa     →  calls external QA services  →  writes qa-issues.json
+/superharness:sh-fix    →  reads qa-issues.json        →  TDD fix per issue  →  re-runs sh-qa
+```
+
+If issues remain after fixing, the loop repeats (max 3 rounds). Regressions auto-escalate severity. After 3 rounds or two consecutive regressions, remaining issues escalate to human.
+
+**Registering QA services** in `.superharness/config.yaml`:
+
+```yaml
+qa:
+  max_fix_rounds: 3        # Anti-oscillation: max fix rounds per issue
+  services:
+    # Managed mode: POST request to service, service designs test cases
+    - name: ai-agent-qa
+      type: managed
+      endpoint: http://localhost:8080
+
+    # Autonomous mode: run a command, read the result file
+    - name: frontend-e2e
+      type: autonomous
+      command: npm run qa:e2e
+      output: .superharness/tasks/{task}/qa-results-e2e.json
+```
+
+Two service types:
+- **managed** — Superharness sends a POST request with task context; the service runs its own test cases and returns results
+- **autonomous** — Superharness runs a command (e.g. an E2E suite) and reads the output file
+
+**File protocol — `qa-issues.json`:**
+
+All QA services write results to a unified `qa-issues.json` in the task directory. This is the contract between QA and fix:
+
+```json
+[
+  {
+    "id": "qa-001",
+    "severity": "critical",
+    "category": "logic-error",
+    "file": "src/planner/schedule.ts",
+    "line": 42,
+    "message": "Off-by-one: loop skips last day of trip",
+    "fix_hint": "Change < to <= in the for-loop condition",
+    "status": "pending",
+    "fix_round": 0
+  },
+  {
+    "id": "qa-002",
+    "severity": "major",
+    "category": "missing-validation",
+    "file": "src/api/trips.ts",
+    "line": 15,
+    "message": "No input validation on date range — negative durations accepted",
+    "fix_hint": "Add guard: if (end <= start) throw",
+    "status": "pending",
+    "fix_round": 0
+  }
+]
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique issue identifier |
+| `severity` | `"critical"` \| `"major"` \| `"minor"` \| `"suggestion"` | Fix priority order |
+| `category` | string | Issue category (e.g. `logic-error`, `missing-validation`, `perf`) |
+| `file` | string | File path |
+| `line` | number | Line number |
+| `message` | string | What's wrong |
+| `fix_hint` | string | Suggested fix |
+| `status` | `"pending"` \| `"fixed"` \| `"escalated"` | Updated by sh-fix during fix loop |
+| `fix_round` | number | Incremented each fix attempt; exceeding `max_fix_rounds` → escalated |
+
+`sh-fix` processes issues in severity order (critical → major → minor), applies TDD per issue (write failing test → fix → verify), updates `status` and `fix_round` in-place, then re-runs `sh-qa` to check for regressions. Suggestion-level issues are never auto-fixed.
+
 ### Session Recovery
 
 When AI context fills up or a session disconnects, code is safe (git worktree) and progress is safe (task.json). The session-start hook detects unfinished tasks and the AI asks whether to continue or start fresh.
@@ -194,25 +274,6 @@ One set of skill source files, `superharness init` adapts format and paths per p
 | Qoder | `.qoder/skills/` | — | — |
 | Gemini CLI | `.gemini/commands/` (Phase 4) | — | BeforeTool + AfterResponse |
 | GitHub Copilot | `~/.copilot/skills/` | — | TBD |
-
-## External QA
-
-Superharness does not call any LLM itself. The QA layer is entirely provided by external services:
-
-```yaml
-# .superharness/config.yaml
-qa:
-  services:
-    - name: ai-agent-qa
-      type: managed           # Managed mode: POST /evaluate, service designs test cases
-      endpoint: http://localhost:8080
-    - name: frontend-e2e
-      type: autonomous        # Autonomous mode: run command + read result file
-      command: npm run qa:e2e
-      output: .superharness/tasks/{task}/qa-results-e2e.json
-```
-
-Anti-oscillation: max 3 fix rounds → regression detection (auto severity escalation) → escalate to human.
 
 ## Acknowledgements
 
