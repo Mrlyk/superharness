@@ -27,6 +27,22 @@ function createSuperHarnessDir(projectDir: string): void {
 	]) {
 		mkdirSync(dir, { recursive: true });
 	}
+
+	// Write .gitignore to exclude runtime state files (prevents worktree merge conflicts)
+	const gitignorePath = join(shDir, ".gitignore");
+	if (!existsSync(gitignorePath)) {
+		writeFileSync(
+			gitignorePath,
+			[
+				"# Runtime state (not committed, prevents worktree merge conflicts)",
+				"tasks/.current-task",
+				".ralph-state.json",
+				"workspace/",
+				"",
+			].join("\n"),
+		);
+	}
+
 	logSuccess(`已创建 ${SUPERHARNESS_DIR}/ 目录`);
 }
 

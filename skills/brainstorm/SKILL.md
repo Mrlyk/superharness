@@ -19,7 +19,7 @@ Every project goes through this process. A todo list, a single-function utility,
 
 ## Checklist
 
-You MUST create a task for each of these items and complete them in order:
+You MUST create a task for each of these items and complete them in order. Each step is its own stage — complete it fully (including any user confirmations) before moving to the next:
 
 1. **Explore project context + spec discovery** — check files, docs, recent commits. Also check if `.superharness/spec/` needs updating (see Spec Discovery below)
 2. **Start mindmap visualization** — invoke `superharness:mindmap` to start the visualization server (see Mindmap Visualization below)
@@ -65,6 +65,8 @@ digraph brainstorming {
 Invoke `superharness:spec-discover` to scan the project and update `.superharness/spec/` if needed. The spec-discover skill handles all the logic — detecting whether specs are skeletons or populated, scanning the codebase, presenting findings, and writing after user confirmation.
 
 Do NOT duplicate spec discovery logic here. Just invoke the skill and wait for it to complete before moving on.
+
+**Stage boundary:** Spec discovery is a self-contained sub-flow that may require user confirmation (e.g., "是否将这些写入 spec?"). Do not proceed to Step 2 until spec-discover has fully completed — including any user confirmations it requires. If spec-discover asks the user a question, wait for their answer and let spec-discover finish before continuing the brainstorm flow.
 
 ## Mindmap Visualization (Step 2)
 

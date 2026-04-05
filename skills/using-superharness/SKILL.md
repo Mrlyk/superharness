@@ -25,6 +25,14 @@ This guide is injected at the start of each AI session to establish how superhar
 | `superharness:spec-discover` | Scan codebase, discover conventions, update .superharness/spec/ |
 | `superharness:mindmap` | Start visualization server for interactive mindmaps |
 
+## Skill Execution Protocol
+
+When invoking any skill:
+
+1. **Announce**: "I'm using [skill name] to [purpose]."
+2. **Check for checklist**: If the skill has a numbered checklist or ordered steps, create a visible task list with one entry per step before starting work. Mark each item as you complete it — this gives the user a clear progress indicator.
+3. **Follow the skill exactly**: Execute its instructions in order. Do not skip steps or reorder.
+
 ## Iron Laws (Non-Negotiable)
 
 1. **TDD**: No production code without a failing test first
