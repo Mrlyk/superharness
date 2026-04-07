@@ -28,6 +28,10 @@ AI coding tools are powerful, but unconstrained power is dangerous: skipping tes
 
 ## How it works
 
+<p align="center">
+  <img src="docs/images/superharness-workflow-en.svg" alt="Superharness Workflow Overview" width="100%" />
+</p>
+
 ```
 /superharness:go "Build a travel planning app"
 

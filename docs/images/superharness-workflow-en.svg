@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 820" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="10" markerHeight="7" orient="auto">
+      <path d="M 0,0.5 L 9,3.5 L 0,6.5" fill="#94A3B8"/>
+    </marker>
+    <marker id="arrowFail" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="10" markerHeight="7" orient="auto">
+      <path d="M 0,0.5 L 9,3.5 L 0,6.5" fill="#C05A3A"/>
+    </marker>
+    <marker id="arrowHook" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="10" markerHeight="7" orient="auto">
+      <path d="M 0,0.5 L 9,3.5 L 0,6.5" fill="#6B5B95"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="820" fill="#FAFBFC" rx="4"/>
+
+  <!-- Title -->
+  <text x="480" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#1A2332">Superharness Workflow Overview</text>
+  <text x="480" y="52" text-anchor="middle" font-size="12" fill="#6B7280">User Perspective · Technical Details at Every Step from Requirement to Delivery</text>
+
+  <!-- ==================== Hook Injection (right sidebar) ==================== -->
+  <rect x="890" y="72" width="50" height="680" rx="5" fill="#6B5B95"/>
+  <text x="915" y="330" text-anchor="middle" font-size="14" font-weight="bold" fill="#FFFFFF" transform="rotate(90,915,330)">Hook Context Injection</text>
+  <text x="915" y="490" text-anchor="middle" font-size="9" fill="#D0C8E8" transform="rotate(90,915,490)">SessionStart · PreToolUse · SubagentStop</text>
+
+  <!-- ==================== Step 0: Session Start ==================== -->
+  <rect x="30" y="72" width="840" height="80" rx="6" fill="#F0EEF8" stroke="#6B5B95" stroke-width="1.5"/>
+  <rect x="30" y="72" width="5" height="80" rx="2" fill="#6B5B95"/>
+
+  <text x="52" y="96" font-size="14" font-weight="bold" fill="#6B5B95">Session Start</text>
+  <text x="52" y="112" font-size="10" fill="#8B7BB5">SessionStart hook fires automatically, no user action needed</text>
+
+  <rect x="240" y="84" width="200" height="28" rx="4" fill="#6B5B95"/>
+  <text x="340" y="103" text-anchor="middle" font-size="10" fill="#FFFFFF">Inject using-superharness protocol</text>
+
+  <rect x="450" y="84" width="180" height="28" rx="4" fill="#6B5B95"/>
+  <text x="540" y="103" text-anchor="middle" font-size="10" fill="#FFFFFF">Inject spec/index.md summaries</text>
+
+  <rect x="640" y="84" width="210" height="28" rx="4" fill="#6B5B95"/>
+  <text x="745" y="103" text-anchor="middle" font-size="10" fill="#FFFFFF">Detect unfinished task → recovery</text>
+
+  <rect x="240" y="118" width="610" height="24" rx="4" fill="#E8E4F0"/>
+  <text x="545" y="135" text-anchor="middle" font-size="9" fill="#6B5B95">Result: AI gets project conventions + Iron Laws + skill dispatch rules + current task state, no manual loading</text>
+
+  <!-- Hook connection line -->
+  <line x1="870" y1="112" x2="890" y2="112" stroke="#6B5B95" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Arrow -->
+  <line x1="450" y1="152" x2="450" y2="168" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ==================== Step 1: Brainstorm ==================== -->
+  <rect x="30" y="174" width="840" height="105" rx="6" fill="#F0F7F4" stroke="#2E7D5B" stroke-width="1.5"/>
+  <rect x="30" y="174" width="5" height="105" rx="2" fill="#2E7D5B"/>
+
+  <text x="52" y="198" font-size="14" font-weight="bold" fill="#2E7D5B">1. Brainstorm</text>
+  <text x="52" y="212" font-size="10" fill="#4A7A60">brainstorm skill · user participates</text>
+
+  <rect x="240" y="186" width="130" height="36" rx="5" fill="#2E7D5B"/>
+  <text x="305" y="203" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">spec-discover</text>
+  <text x="305" y="215" text-anchor="middle" font-size="8" fill="#C0E8D0">scan code → spec</text>
+
+  <line x1="374" y1="204" x2="388" y2="204" stroke="#94A3B8" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <rect x="392" y="186" width="130" height="36" rx="5" fill="#2E7D5B"/>
+  <text x="457" y="203" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">Clarify one by one</text>
+  <text x="457" y="215" text-anchor="middle" font-size="8" fill="#C0E8D0">multiple choice first</text>
+
+  <line x1="526" y1="204" x2="540" y2="204" stroke="#94A3B8" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <rect x="544" y="186" width="140" height="36" rx="5" fill="#2E7D5B"/>
+  <text x="614" y="203" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">Propose 2-3 options</text>
+  <text x="614" y="215" text-anchor="middle" font-size="8" fill="#C0E8D0">recommend + trade-offs</text>
+
+  <line x1="688" y1="204" x2="702" y2="204" stroke="#94A3B8" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <rect x="706" y="186" width="140" height="36" rx="5" fill="#2E7D5B"/>
+  <text x="776" y="203" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">User approves</text>
+  <text x="776" y="215" text-anchor="middle" font-size="8" fill="#C0E8D0">HARD-GATE</text>
+
+  <rect x="240" y="230" width="130" height="24" rx="4" fill="#3D9B6E"/>
+  <text x="305" y="247" text-anchor="middle" font-size="9" fill="#FFFFFF">mindmap visualization</text>
+
+  <rect x="380" y="230" width="200" height="24" rx="4" fill="#3D9B6E"/>
+  <text x="480" y="247" text-anchor="middle" font-size="9" fill="#FFFFFF">write prd.md + task.json + contract.md</text>
+
+  <rect x="590" y="230" width="180" height="24" rx="4" fill="#3D9B6E"/>
+  <text x="680" y="247" text-anchor="middle" font-size="9" fill="#FFFFFF">Spec self-review → user review</text>
+
+  <rect x="240" y="260" width="610" height="14" rx="3" fill="#E8F5EE"/>
+  <text x="545" y="270" text-anchor="middle" font-size="8" fill="#4A7A60">Artifacts: .superharness/tasks/{task}/prd.md · task.json · contract.md · trace.jsonl (brainstorm:start)</text>
+
+  <!-- Arrow -->
+  <line x1="450" y1="279" x2="450" y2="295" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ==================== Step 2: Planning ==================== -->
+  <rect x="30" y="301" width="840" height="75" rx="6" fill="#F0F7F4" stroke="#2E7D5B" stroke-width="1.5"/>
+  <rect x="30" y="301" width="5" height="75" rx="2" fill="#2E7D5B"/>
+
+  <text x="52" y="325" font-size="14" font-weight="bold" fill="#2E7D5B">2. Task Decomposition</text>
+  <text x="52" y="339" font-size="10" fill="#4A7A60">writing-plans skill · automated</text>
+
+  <rect x="240" y="313" width="160" height="28" rx="4" fill="#2E7D5B"/>
+  <text x="320" y="332" text-anchor="middle" font-size="10" fill="#FFFFFF">Bite-sized task splitting</text>
+
+  <rect x="410" y="313" width="160" height="28" rx="4" fill="#2E7D5B"/>
+  <text x="490" y="332" text-anchor="middle" font-size="10" fill="#FFFFFF">Generate JSONL context</text>
+
+  <rect x="580" y="313" width="160" height="28" rx="4" fill="#2E7D5B"/>
+  <text x="660" y="332" text-anchor="middle" font-size="10" fill="#FFFFFF">Refine Sprint Contract</text>
+
+  <rect x="240" y="349" width="500" height="20" rx="3" fill="#E8F5EE"/>
+  <text x="490" y="363" text-anchor="middle" font-size="8" fill="#4A7A60">Artifacts: plan.md · implement.jsonl · check.jsonl · debug.jsonl (read by PreToolUse hook, injected into subagents)</text>
+
+  <!-- Arrow -->
+  <line x1="450" y1="376" x2="450" y2="392" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Hook connection -->
+  <line x1="870" y1="334" x2="890" y2="334" stroke="#6B5B95" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- ==================== Step 3-4: Worktree + TDD ==================== -->
+  <rect x="30" y="398" width="840" height="95" rx="6" fill="#EEF2FA" stroke="#2A5A82" stroke-width="1.5"/>
+  <rect x="30" y="398" width="5" height="95" rx="2" fill="#2A5A82"/>
+
+  <text x="52" y="422" font-size="14" font-weight="bold" fill="#2A5A82">3-4. Isolated Dev + TDD Implementation</text>
+  <text x="52" y="436" font-size="10" fill="#5A7A96">using-git-worktrees + subagent-driven-development · automated</text>
+
+  <rect x="240" y="410" width="120" height="36" rx="5" fill="#2A5A82"/>
+  <text x="300" y="427" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">Create worktree</text>
+  <text x="300" y="439" text-anchor="middle" font-size="8" fill="#C0D8F0">isolated branch</text>
+
+  <line x1="364" y1="428" x2="378" y2="428" stroke="#94A3B8" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <rect x="382" y="410" width="150" height="36" rx="5" fill="#2A5A82"/>
+  <text x="457" y="427" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">dispatch implement</text>
+  <text x="457" y="439" text-anchor="middle" font-size="8" fill="#C0D8F0">fresh subagent per task</text>
+
+  <line x1="536" y1="428" x2="550" y2="428" stroke="#94A3B8" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <rect x="554" y="410" width="140" height="36" rx="5" fill="#2A5A82"/>
+  <text x="624" y="427" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">RED → GREEN</text>
+  <text x="624" y="439" text-anchor="middle" font-size="8" fill="#C0D8F0">TDD Iron Law</text>
+
+  <line x1="698" y1="428" x2="712" y2="428" stroke="#94A3B8" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <rect x="716" y="410" width="130" height="36" rx="5" fill="#2A5A82"/>
+  <text x="781" y="427" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">REFACTOR</text>
+  <text x="781" y="439" text-anchor="middle" font-size="8" fill="#C0D8F0">commit</text>
+
+  <rect x="240" y="454" width="606" height="14" rx="3" fill="#E8EFF8"/>
+  <text x="543" y="464" text-anchor="middle" font-size="8" fill="#5A7A96">PreToolUse hook auto-injects implement.jsonl context → subagent gets spec + prd + relevant files, no manual prompt assembly</text>
+
+  <rect x="240" y="473" width="606" height="14" rx="3" fill="#E8EFF8"/>
+  <text x="543" y="483" text-anchor="middle" font-size="8" fill="#5A7A96">Artifacts: implementation code + test files + git commits (on worktree isolated branch)</text>
+
+  <!-- Hook connection -->
+  <line x1="870" y1="440" x2="890" y2="440" stroke="#6B5B95" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Arrow -->
+  <line x1="450" y1="493" x2="450" y2="509" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ==================== Step 5: Two-stage Review ==================== -->
+  <rect x="30" y="515" width="840" height="85" rx="6" fill="#FFF8F0" stroke="#C07A3A" stroke-width="1.5"/>
+  <rect x="30" y="515" width="5" height="85" rx="2" fill="#C07A3A"/>
+
+  <text x="52" y="539" font-size="14" font-weight="bold" fill="#C07A3A">5. Two-Stage Review</text>
+  <text x="52" y="553" font-size="10" fill="#B8846A">check agent · SubagentStop hook (Ralph Loop)</text>
+
+  <rect x="240" y="527" width="180" height="36" rx="5" fill="#C07A3A"/>
+  <text x="330" y="544" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">Spec Compliance</text>
+  <text x="330" y="556" text-anchor="middle" font-size="8" fill="#F0DCC0">dispatch check · spec-reviewer</text>
+
+  <line x1="424" y1="545" x2="438" y2="545" stroke="#94A3B8" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <rect x="442" y="527" width="180" height="36" rx="5" fill="#C07A3A"/>
+  <text x="532" y="544" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">Code Quality</text>
+  <text x="532" y="556" text-anchor="middle" font-size="8" fill="#F0DCC0">dispatch check · code-reviewer</text>
+
+  <line x1="626" y1="545" x2="640" y2="545" stroke="#94A3B8" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <rect x="644" y="527" width="200" height="36" rx="5" fill="#C07A3A"/>
+  <text x="744" y="544" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFFFF">Ralph Loop Verify</text>
+  <text x="744" y="556" text-anchor="middle" font-size="8" fill="#F0DCC0">SubagentStop hook · max 5 rounds</text>
+
+  <rect x="240" y="571" width="604" height="20" rx="3" fill="#FFF3E8"/>
+  <text x="542" y="585" text-anchor="middle" font-size="8" fill="#B8846A">PreToolUse injects check.jsonl · SubagentStop blocks premature completion · fail → implement agent fixes → re-review</text>
+
+  <!-- Fail loop back to Step 3-4 -->
+  <path d="M 56,515 C 56,505 56,468 56,448 C 56,428 80,418 120,418" fill="none" stroke="#C05A3A" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowFail)"/>
+  <text x="68" y="475" font-size="9" fill="#C05A3A" transform="rotate(-90,68,475)">fail → fix</text>
+
+  <!-- Hook connection -->
+  <line x1="870" y1="550" x2="890" y2="550" stroke="#6B5B95" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Arrow -->
+  <line x1="450" y1="600" x2="450" y2="616" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="465" y="612" font-size="10" font-weight="bold" fill="#2E7D5B">pass</text>
+
+  <!-- ==================== Step 6: QA ==================== -->
+  <rect x="30" y="622" width="840" height="68" rx="6" fill="#FDF2F2" stroke="#9B3A3A" stroke-width="1.5"/>
+  <rect x="30" y="622" width="5" height="68" rx="2" fill="#9B3A3A"/>
+
+  <text x="52" y="646" font-size="14" font-weight="bold" fill="#9B3A3A">6. QA Validation (optional)</text>
+  <text x="52" y="660" font-size="10" fill="#B86A6A">sh-qa / sh-fix skill · external service</text>
+
+  <rect x="240" y="634" width="190" height="28" rx="4" fill="#9B3A3A"/>
+  <text x="335" y="653" text-anchor="middle" font-size="10" fill="#FFFFFF">managed / autonomous mode</text>
+
+  <rect x="440" y="634" width="160" height="28" rx="4" fill="#9B3A3A"/>
+  <text x="520" y="653" text-anchor="middle" font-size="10" fill="#FFFFFF">qa-issues.json</text>
+
+  <rect x="610" y="634" width="240" height="28" rx="4" fill="#9B3A3A"/>
+  <text x="730" y="653" text-anchor="middle" font-size="10" fill="#FFFFFF">sh-fix TDD repair · max 3 · anti-oscillation</text>
+
+  <rect x="240" y="668" width="610" height="14" rx="3" fill="#FDF0F0"/>
+  <text x="545" y="678" text-anchor="middle" font-size="8" fill="#B86A6A">Artifacts: qa-report.md · qa-issues.json · regression detection → escalate to human if exceeded</text>
+
+  <!-- QA fail loop back to Step 3-4 -->
+  <path d="M 42,622 C 42,570 42,468 42,448 C 42,420 80,410 130,410" fill="none" stroke="#C05A3A" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#arrowFail)"/>
+  <text x="24" y="530" font-size="9" fill="#C05A3A" transform="rotate(-90,24,530)">QA fail → sh-fix → rerun</text>
+
+  <!-- Arrow -->
+  <line x1="450" y1="690" x2="450" y2="706" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ==================== Step 7: Merge ==================== -->
+  <rect x="30" y="712" width="840" height="44" rx="6" fill="#F0F7F4" stroke="#2E7D5B" stroke-width="1.5"/>
+  <rect x="30" y="712" width="5" height="44" rx="2" fill="#2E7D5B"/>
+
+  <text x="52" y="740" font-size="14" font-weight="bold" fill="#2E7D5B">7. Merge &amp; Complete</text>
+
+  <rect x="240" y="722" width="140" height="24" rx="4" fill="#2E7D5B"/>
+  <text x="310" y="739" text-anchor="middle" font-size="9" fill="#FFFFFF">generate trace-summary.md</text>
+
+  <rect x="390" y="722" width="200" height="24" rx="4" fill="#2E7D5B"/>
+  <text x="490" y="739" text-anchor="middle" font-size="9" fill="#FFFFFF">merge / PR / keep / discard</text>
+
+  <rect x="600" y="722" width="140" height="24" rx="4" fill="#2E7D5B"/>
+  <text x="670" y="739" text-anchor="middle" font-size="9" fill="#FFFFFF">cleanup worktree</text>
+
+  <rect x="750" y="722" width="100" height="24" rx="4" fill="#2E7D5B"/>
+  <text x="800" y="739" text-anchor="middle" font-size="9" fill="#FFFFFF">task → completed</text>
+
+  <!-- ==================== LEGEND ==================== -->
+  <line x1="30" y1="770" x2="870" y2="770" stroke="#E5E7EB" stroke-width="1"/>
+
+  <g transform="translate(50, 790)">
+    <rect x="0" y="2" width="16" height="14" rx="3" fill="#2E7D5B"/>
+    <text x="22" y="13" font-size="11" fill="#4A5568">Orchestration</text>
+
+    <rect x="115" y="2" width="16" height="14" rx="3" fill="#2A5A82"/>
+    <text x="137" y="13" font-size="11" fill="#4A5568">TDD Impl.</text>
+
+    <rect x="220" y="2" width="16" height="14" rx="3" fill="#C07A3A"/>
+    <text x="242" y="13" font-size="11" fill="#4A5568">Review</text>
+
+    <rect x="300" y="2" width="16" height="14" rx="3" fill="#9B3A3A"/>
+    <text x="322" y="13" font-size="11" fill="#4A5568">QA</text>
+
+    <rect x="360" y="2" width="16" height="14" rx="3" fill="#6B5B95"/>
+    <text x="382" y="13" font-size="11" fill="#4A5568">Hook Injection</text>
+
+    <line x1="480" y1="9" x2="516" y2="9" stroke="#C05A3A" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="524" y="13" font-size="11" fill="#4A5568">fail → rework</text>
+
+    <line x1="620" y1="9" x2="656" y2="9" stroke="#6B5B95" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="664" y="13" font-size="11" fill="#4A5568">context injection</text>
+  </g>
+
+</svg>
