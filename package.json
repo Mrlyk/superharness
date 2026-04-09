@@ -1,6 +1,6 @@
 {
   "name": "superharness",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "AI tool-agnostic workflow engine for software engineering",
   "type": "module",
   "bin": {
@@ -28,6 +28,10 @@
     "author": {
     "name": "Mrlyk",
     "email": "liaoyk_code@qq.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mrlyk/superharness"
   },
   "keywords": [
     "ai",
