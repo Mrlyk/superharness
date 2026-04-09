@@ -97,7 +97,7 @@ The core of Superharness is three non-negotiable rules, each with pre-built rebu
 
 Project conventions are living documents that evolve with the codebase, not static templates filled once.
 
-- **spec-discover** (code → spec): Scans package.json, config files, source code → identifies framework, state management, testing tools, API patterns → writes to `.superharness/spec/` after user confirmation
+- **spec-discover** (code → spec): Auto-detects project ecosystem (JS/TS, Python, Java/Kotlin) → loads language-specific reference → scans manifest files, config, source code → identifies framework, testing, code quality, API patterns → writes to `.superharness/spec/` after user confirmation
 - **spec-update** (user → spec): User says "use zustand from now on" → converts to descriptive format → writes to spec → takes effect next session
 - Records facts ("project uses zustand"), doesn't invent rules ("must use zustand")
 

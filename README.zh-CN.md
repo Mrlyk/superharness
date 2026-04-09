@@ -97,7 +97,7 @@ Superharness 的核心是三条不可协商的规则，每条都预设了"合理
 
 项目规范不是一次性填写的静态文档，而是随项目演进持续更新的活文档。
 
-- **spec-discover**（code → spec）：扫描 package.json、配置文件、代码结构 → 识别框架、状态管理、测试工具、API 风格等 → 用户确认后写入 `.superharness/spec/`
+- **spec-discover**（code → spec）：自动检测项目生态（JS/TS、Python、Java/Kotlin）→ 加载语言专属参考 → 扫描清单文件、配置、源码 → 识别框架、测试、代码质量、API 风格等 → 用户确认后写入 `.superharness/spec/`
 - **spec-update**（user → spec）：用户口头说"以后用 zustand"→ 转为描述式格式写入 spec → 下次 session 自动生效
 - 只记录事实（"项目使用 zustand"），不发明规则（"必须使用 zustand"）
 

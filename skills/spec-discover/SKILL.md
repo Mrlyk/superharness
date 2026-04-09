@@ -9,6 +9,8 @@ Scan the project codebase to discover conventions and tech stack choices. Update
 
 Project specs are living documents, not static templates. Every time this skill runs, it compares what the codebase actually does against what the spec files document. The gap between "what the spec says" and "what the code does" is what this skill closes.
 
+This skill supports multiple ecosystems (JS/TS, Python, Java, and others). Language-specific detection knowledge is in `./reference/` files.
+
 ## When This Runs
 
 - **brainstorm** invokes this as Step 1 before requirement clarification
@@ -17,61 +19,81 @@ Project specs are living documents, not static templates. Every time this skill 
 
 ## Process
 
+### Step 0: Detect Project Type
+
+Before scanning, determine what kind of project this is so you know what to look for.
+
+1. Read `.superharness/config.yaml` and check the `project.type` field
+2. If `type` is explicitly set (not `auto`), use that type and load the matching reference file
+3. If `type` is `auto`, check which manifest files exist in the project root:
+
+| Manifest file(s) present | Ecosystem | Reference to load |
+|--------------------------|-----------|-------------------|
+| `package.json` | JS/TS | `./reference/js-ts.md` |
+| `pyproject.toml`, `setup.py`, `requirements.txt`, `Pipfile` | Python | `./reference/python.md` |
+| `pom.xml`, `build.gradle`, `build.gradle.kts` | Java/Kotlin | `./reference/java.md` |
+| None of the above | Unknown | No reference file |
+
+4. If multiple manifest types are present (e.g., both `package.json` and `pyproject.toml`), load all matching references -- this is a polyglot or fullstack project
+5. Log the detected ecosystem(s) in your initial output
+
+**Fallback for unknown ecosystems:** If no reference file matches, you still run discovery using your general programming knowledge. Identify the same categories (language, framework, testing, code organization, etc.) -- you just don't have a lookup table for framework detection signatures.
+
 ### Step 1: Determine Spec State
 
 Read `.superharness/spec/` files. If the directory doesn't exist, tell the user to run `superharness init` first and stop.
 
 Check whether spec files are **skeletons** (only contain TODO comments, `<!-- TODO -->`, or empty checklists with no real content) or **populated** (have substantive content describing actual project conventions).
 
-- Skeleton → go to Step 2 (Full Discovery)
-- Populated → go to Step 3 (Incremental Check)
+- Skeleton -> go to Step 2 (Full Discovery)
+- Populated -> go to Step 3 (Incremental Check)
 
 ### Step 2: Full Discovery
 
 The spec files are empty. Scan the project and build an initial picture of what conventions exist.
 
-**What to scan** (focus on high-signal files, not every file in the repo):
+**If a reference file was loaded in Step 0**, follow its guidance:
+- Use the **Manifest Files** table to know what files to scan and what to extract from each
+- Use the **Framework Detection Signatures** table to identify the specific framework
+- Use the **Detection Dimensions** list to know what categories to identify
+- Use the **Example Output** as a format guide
+
+**If no reference file was loaded**, scan using general knowledge:
+- Look for build/config files in the project root to identify the language and build system
+- Identify the primary framework from file extensions, directory structure, and dependencies
+- Check for testing frameworks, linting tools, and CI/CD configuration
+- Examine a few representative source files for code organization patterns
+
+**In all cases**, also check these universal sources:
 
 | Source | What to look for |
 |--------|-----------------|
-| `package.json` | Framework, key dependencies, scripts, package manager |
-| `tsconfig.json` / `jsconfig.json` | Language settings, path aliases, module system |
-| Config files (vite, next, webpack, etc.) | Build tooling, environment setup |
-| `.eslintrc` / `biome.json` / `.prettierrc` | Linting and formatting conventions |
-| Entry points (`src/index.*`, `src/main.*`, `src/app.*`) | App structure, routing patterns |
+| `Dockerfile` / `docker-compose.yml` | Deployment patterns |
+| `.github/workflows/` / `.gitlab-ci.yml` | CI/CD pipeline |
+| `README.md` | Project description, setup instructions |
+| `.gitignore` | What's excluded (hints at tooling) |
 | A few representative source files | Code organization, import patterns, error handling |
-| Test files (if any exist) | Testing framework, test patterns |
-| `Dockerfile` / `docker-compose.yml` | Deployment patterns (if visible) |
-
-**What to identify**:
-
-- Tech stack: framework, language version, package manager
-- State management: zustand / redux / pinia / mobx / context
-- Testing: vitest / jest / pytest / mocha, testing patterns
-- API style: RESTful / GraphQL / tRPC, route conventions
-- Code organization: layered architecture, feature-based modules, barrel exports
-- Styling: Tailwind / CSS Modules / styled-components / SCSS
-- Error handling: error boundary patterns, try-catch conventions
-- Import/export: ESM / CJS, path alias usage
 
 **Present findings to user in Chinese**:
 
 > "我分析了项目代码，发现以下约定:
-> - 框架: React 18 + Next.js 14 (App Router)
-> - 状态管理: zustand
-> - 测试: vitest + @testing-library/react
-> - 样式: Tailwind CSS
-> - API: RESTful, 路由前缀 /api/
-> - 代码组织: 按功能模块划分 (features/)
+> - 语言/框架: [detected language and framework]
+> - 包管理/构建: [detected package manager or build tool]
+> - 测试: [detected testing framework and patterns]
+> - 代码质量: [detected linting/formatting/type-checking tools]
+> - API 风格: [detected API patterns, if applicable]
+> - 代码组织: [detected project structure and module patterns]
 >
 > 是否将这些写入 `.superharness/spec/`? 后续可以随时修改。"
+
+Adjust the categories based on what the reference file's Detection Dimensions specify. Not all categories apply to every project -- omit dimensions that aren't relevant.
 
 **Only write after user confirms.** If the user says no or wants changes, adjust and ask again, or skip entirely.
 
 Write each discovery into the most relevant spec file. For example:
-- State management → `spec/components/state-management.md` (if it exists)
-- API style → `spec/api/design.md` (if it exists)
-- General patterns → `spec/guides/index.md`
+- State management -> `spec/components/state-management.md` (if it exists)
+- API style -> `spec/api/design.md` (if it exists)
+- General patterns -> `spec/guides/index.md`
 
 If the matching spec file doesn't exist, write to the closest match or `spec/guides/index.md`.
 
@@ -83,16 +105,16 @@ The spec already has content. Do a quick comparison: what does the code do now v
 
 1. Read the current spec files to know what's already documented
 2. Quick-scan for changes since last check:
-   - New dependencies in package.json not mentioned in spec
+   - New dependencies in the project's manifest file(s) not mentioned in spec
    - New config files or major directory changes
-   - Changed patterns (e.g., migrated from CSS Modules to Tailwind)
+   - Changed patterns (e.g., migrated testing framework, added new tooling)
 3. If new or changed patterns found, present them one by one in Chinese:
    > "发现项目新增了 [X] 模式，当前 spec 中未记录。是否更新?"
-4. User confirms → update the specific spec file and commit
-5. User declines → skip, continue to next finding
-6. Nothing new → report "项目规范已是最新" and finish
+4. User confirms -> update the specific spec file and commit
+5. User declines -> skip, continue to next finding
+6. Nothing new -> report "项目规范已是最新" and finish
 
-The incremental check should be noticeably faster than full discovery -- under a minute for most projects. Don't re-read every source file; focus on config and package changes as signals.
+The incremental check should be noticeably faster than full discovery -- under a minute for most projects. Don't re-read every source file; focus on manifest and config changes as signals.
 
 ## What Good Spec Entries Look Like
 
@@ -115,7 +137,34 @@ The incremental check should be noticeably faster than full discovery -- under a
 Store 文件必须放在 src/stores/ 目录下。
 ```
 
+**Good** (Python project example):
+```markdown
+## Web 框架
+
+项目使用 FastAPI 构建 REST API。
+
+- 路由定义在 `app/routers/` 目录，按资源分文件
+- 使用 Pydantic model 做请求/响应校验
+- 依赖注入通过 `Depends()` 实现
+```
+
 The difference: good entries describe observed patterns that a new developer (or AI) can follow. Bad entries prescribe rules that may not reflect reality. This skill discovers -- it doesn't legislate.
+
+## Reference Files
+
+Language-specific detection knowledge is in `./reference/` files in this directory:
+
+- `reference/js-ts.md` -- JavaScript / TypeScript projects
+- `reference/python.md` -- Python projects
+- `reference/java.md` -- Java / Kotlin projects
+
+Each reference file contains:
+1. **Manifest Files** table -- what files to scan and what to extract
+2. **Framework Detection Signatures** table -- how to identify specific frameworks from dependencies/config
+3. **Detection Dimensions** list -- what categories to identify for this ecosystem
+4. **Example Output** -- sample discovery results in the expected format
+
+Load the relevant reference file(s) in Step 0. If none match, use your general knowledge. To add support for a new language, create a new reference file following the same structure.
 
 ## Trace Logging
 
