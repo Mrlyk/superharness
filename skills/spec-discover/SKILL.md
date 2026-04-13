@@ -25,13 +25,14 @@ Before scanning, determine what kind of project this is so you know what to look
 
 1. Read `.superharness/config.yaml` and check the `project.type` field
 2. If `type` is explicitly set (not `auto`), use that type and load the matching reference file
-3. If `type` is `auto`, check which manifest files exist in the project root:
+3. If `type` is `auto`, check which manifest files or project bundles exist in the project root (note: `.xcodeproj` and `.xcworkspace` are directory bundles, match by extension on directories):
 
-| Manifest file(s) present | Ecosystem | Reference to load |
-|--------------------------|-----------|-------------------|
+| Manifest file(s) / bundle(s) present | Ecosystem | Reference to load |
+|--------------------------------------|-----------|-------------------|
 | `package.json` | JS/TS | `./reference/js-ts.md` |
 | `pyproject.toml`, `setup.py`, `requirements.txt`, `Pipfile` | Python | `./reference/python.md` |
 | `pom.xml`, `build.gradle`, `build.gradle.kts` | Java/Kotlin | `./reference/java.md` |
+| `Package.swift`, `*.xcodeproj/`, `*.xcworkspace/` | Swift (iOS/macOS) | `./reference/swift.md` |
 | None of the above | Unknown | No reference file |
 
 4. If multiple manifest types are present (e.g., both `package.json` and `pyproject.toml`), load all matching references -- this is a polyglot or fullstack project
