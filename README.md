@@ -62,6 +62,19 @@ superharness init --platforms claude-code --template frontend
 /superharness:go "your requirement or link to spec"
 ```
 
+> [!IMPORTANT]
+> **To update the tool, run `superharness update` — do NOT re-run `init`.**
+>
+> After upgrading the global package, run inside your project:
+>
+> ```bash
+> superharness update
+> ```
+>
+> It refreshes skills / agents / hooks / platform settings while **preserving** `.superharness/spec/`, `config.yaml`, `workflow.md`, `worktree.yaml` (so your `spec-discover` results aren't wiped). The command also queries the npm registry and, if the global package is outdated, prompts to upgrade — auto-detecting your package manager (npm / pnpm / yarn / bun) and re-executing the new version on success.
+>
+> Use `superharness update --force` to reset spec + config files (requires confirmation). Use `superharness init --force` to fully re-initialize. `-y` skips all prompts (CI use).
+
 <details>
 <summary><strong>Options</strong></summary>
 

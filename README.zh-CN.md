@@ -62,6 +62,19 @@ superharness init --platforms claude-code --template frontend
 /superharness:go "你的需求描述或需求链接"
 ```
 
+> [!IMPORTANT]
+> **更新工具请用 `superharness update`，不要重新跑 `init`。**
+>
+> 升级全局包后，在项目目录执行：
+>
+> ```bash
+> superharness update
+> ```
+>
+> 它会刷新 skills / agents / hooks / 平台 settings，**但保留** `.superharness/spec/`、`config.yaml`、`workflow.md`、`worktree.yaml` 等你已经定制的内容（避免覆盖 `spec-discover` 产物）。命令开头还会查询 npm registry，如果发现全局包落后，会提示你升级并自动检测包管理器（npm/pnpm/yarn/bun）执行升级，升级完自动 re-exec 新版本继续 update。
+>
+> 重置项目用 `superharness update --force`（覆盖 spec 与三个配置文件，需二次确认）；重新初始化用 `superharness init --force`。`-y` 跳过所有交互（CI 场景）。
+
 <details>
 <summary><strong>参数说明</strong></summary>
 

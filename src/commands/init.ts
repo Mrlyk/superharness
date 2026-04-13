@@ -9,9 +9,11 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import pc from "picocolors";
-import { log, logSuccess, logWarn } from "../utils/log.js";
+import { log, logError, logSuccess, logWarn } from "../utils/log.js";
 import { getPackageRoot } from "../utils/fs.js";
 import { PLATFORMS, type Platform, setupPlatform } from "../platforms/index.js";
+import { confirm } from "../utils/prompt.js";
+import { writeMeta } from "../utils/meta.js";
 
 const SUPERHARNESS_DIR = ".superharness";
 
@@ -119,7 +121,11 @@ function renderVerifyBlock(cmds: string[]): string {
 	return cmds.map((c) => `  - ${c}`).join("\n");
 }
 
-function copyInitTemplates(projectDir: string, packageRoot: string): void {
+function copyInitTemplates(
+	projectDir: string,
+	packageRoot: string,
+	platforms: Platform[],
+): void {
 	const templatesDir = join(packageRoot, "templates");
 	const shDir = join(projectDir, SUPERHARNESS_DIR);
 
@@ -131,6 +137,9 @@ function copyInitTemplates(projectDir: string, packageRoot: string): void {
 
 	const detected = detectProject(projectDir);
 	const verifyBlock = renderVerifyBlock(detected.verifyCommands);
+	const platformsBlock = (platforms.length ? platforms : ["claude-code"])
+		.map((p) => `  - ${p}`)
+		.join("\n");
 
 	for (const [src, dest] of Object.entries(templateFiles)) {
 		const srcPath = join(templatesDir, src);
@@ -140,11 +149,23 @@ function copyInitTemplates(projectDir: string, packageRoot: string): void {
 			const projectName = projectDir.split("/").pop() || "my-project";
 			const rendered = content
 				.replaceAll("{{projectName}}", projectName)
-				.replaceAll("{{verifyCommands}}", verifyBlock);
+				.replaceAll("{{verifyCommands}}", verifyBlock)
+				.replaceAll("{{platformsBlock}}", platformsBlock);
 			writeFileSync(destPath, rendered);
 		}
 	}
 	logSuccess(`已生成配置文件 (检测到 ${pc.bold(detected.label)} 项目)`);
+}
+
+function readPackageVersion(packageRoot: string): string {
+	try {
+		const pkg = JSON.parse(
+			readFileSync(join(packageRoot, "package.json"), "utf-8"),
+		) as { version: string };
+		return pkg.version;
+	} catch {
+		return "0.0.0";
+	}
 }
 
 export const initCommand = new Command("init")
@@ -159,46 +180,91 @@ export const initCommand = new Command("init")
 		"规范模板 (frontend|backend|ai-agent|fullstack|blank)",
 		"blank",
 	)
-	.action((options: { platforms: string; template: string }) => {
-		const projectDir = process.cwd();
-		const packageRoot = getPackageRoot();
-		const platforms = options.platforms
-			.split(",")
-			.map((p) => p.trim()) as Platform[];
-		const template = options.template as Template;
+	.option("-f, --force", "已初始化时强制覆盖 (需二次确认)", false)
+	.option("-y, --yes", "所有交互默认 yes (CI 场景)", false)
+	.action(
+		async (options: {
+			platforms: string;
+			template: string;
+			force: boolean;
+			yes: boolean;
+		}) => {
+			const projectDir = process.cwd();
+			const packageRoot = getPackageRoot();
+			const platforms = options.platforms
+				.split(",")
+				.map((p) => p.trim()) as Platform[];
+			const template = options.template as Template;
+			const shDir = join(projectDir, SUPERHARNESS_DIR);
 
-		const isDefaultPlatform =
-			platforms.length === 1 && platforms[0] === "claude-code";
-
-		console.log("");
-		log(`正在初始化: ${pc.bold(projectDir)}`);
-		console.log("");
-
-		createSuperHarnessDir(projectDir, packageRoot);
-		copySpecTemplate(projectDir, template, packageRoot);
-		copyInitTemplates(projectDir, packageRoot);
-
-		console.log("");
-		if (isDefaultPlatform) {
-			log(
-				`平台: ${pc.bold("claude-code")} ${pc.dim("(默认，使用 --platforms 可更改)")}`,
-			);
-		} else {
-			log(`平台: ${pc.bold(platforms.join(", "))}`);
-		}
-		for (const platform of platforms) {
-			if (!PLATFORMS.includes(platform)) {
-				logWarn(`未知平台 "${platform}"，已跳过`);
-				continue;
+			if (existsSync(shDir)) {
+				if (!options.force) {
+					console.log("");
+					logError(`检测到项目已初始化 (${SUPERHARNESS_DIR}/ 已存在)`);
+					log(
+						`重新运行 init 会覆盖你的 spec 规范目录与配置文件。`,
+					);
+					log(`→ 要更新工具，请运行: ${pc.bold("superharness update")}`);
+					log(
+						`→ 确实要重置项目，请运行: ${pc.bold("superharness init --force")}`,
+					);
+					console.log("");
+					process.exit(1);
+				}
+				console.log("");
+				logWarn(`--force 将覆盖现有 ${SUPERHARNESS_DIR}/ 内容`);
+				const ok = await confirm("确认重置？", {
+					defaultYes: false,
+					assumeYes: options.yes,
+				});
+				if (!ok) {
+					logWarn("已取消");
+					process.exit(0);
+				}
 			}
-			setupPlatform(platform, projectDir, packageRoot);
-		}
 
-		console.log("");
-		logSuccess("初始化完成!");
-		log(
-			`下一步: 在 AI 工具中运行 ${pc.bold('/superharness:go "你的需求或需求链接"')}`,
-		);
-		log(`编辑 ${pc.dim(".superharness/spec/")} 自定义项目规范`);
-		console.log("");
-	});
+			const isDefaultPlatform =
+				platforms.length === 1 && platforms[0] === "claude-code";
+
+			console.log("");
+			log(`正在初始化: ${pc.bold(projectDir)}`);
+			console.log("");
+
+			const validPlatforms = platforms.filter((p): p is Platform =>
+				(PLATFORMS as readonly string[]).includes(p),
+			);
+
+			createSuperHarnessDir(projectDir, packageRoot);
+			copySpecTemplate(projectDir, template, packageRoot);
+			copyInitTemplates(projectDir, packageRoot, validPlatforms);
+
+			console.log("");
+			if (isDefaultPlatform) {
+				log(
+					`平台: ${pc.bold("claude-code")} ${pc.dim("(默认，使用 --platforms 可更改)")}`,
+				);
+			} else {
+				log(`平台: ${pc.bold(platforms.join(", "))}`);
+			}
+			for (const platform of platforms) {
+				if (!PLATFORMS.includes(platform)) {
+					logWarn(`未知平台 "${platform}"，已跳过`);
+					continue;
+				}
+				setupPlatform(platform, projectDir, packageRoot);
+			}
+
+			writeMeta(join(shDir, "config.yaml"), {
+				superharnessVersion: readPackageVersion(packageRoot),
+				lastUpdatedAt: new Date().toISOString(),
+			});
+
+			console.log("");
+			logSuccess("初始化完成!");
+			log(
+				`下一步: 在 AI 工具中运行 ${pc.bold('/superharness:go "你的需求或需求链接"')}`,
+			);
+			log(`编辑 ${pc.dim(".superharness/spec/")} 自定义项目规范`);
+			console.log("");
+		},
+	);

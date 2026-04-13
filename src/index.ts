@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { initCommand } from "./commands/init.js";
 import { traceCommand } from "./commands/trace.js";
+import { updateCommand } from "./commands/update.js";
 
 const pkgPath = fileURLToPath(new URL("../package.json", import.meta.url));
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as { version: string };
@@ -15,6 +16,7 @@ program
 	.version(pkg.version);
 
 program.addCommand(initCommand);
+program.addCommand(updateCommand);
 program.addCommand(traceCommand);
 
 program.parse();
