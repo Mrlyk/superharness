@@ -4,3 +4,4 @@ examples/
 *.tsbuildinfo
 .DS_Store
 .idea
+skills/*-workspace/

@@ -4,6 +4,7 @@
 
 ### Added
 
+- **test-driven-development: 多语言测试命令解析** -- 新增 "Resolving the Test Command" 节，让 TDD 流程先读 `.superharness/spec/testing/index.md`，读不到则按 manifest 推断 JS/TS、Python、Maven、Gradle、Swift 的测试命令。原先硬编码的 `npm test` 示例改为 `<test command>` 占位，Example: Bug Fix 加语言说明。配套 `evals/evals.json`（Python/Swift/Java 三条场景）。
 - **spec-discover: Swift (iOS/macOS) 支持** -- 新增 `reference/swift.md`，识别 `Package.swift` / `*.xcodeproj` / `*.xcworkspace`，覆盖 SwiftUI/UIKit/AppKit、SPM、XCTest/swift-testing、SwiftLint 等维度。Step 0 的 manifest 表改为兼容目录 bundle 匹配。
 
 ### Fixed

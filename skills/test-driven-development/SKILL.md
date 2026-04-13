@@ -45,6 +45,23 @@ Write code before the test? Delete it. Start over.
 
 Implement fresh from tests. Period.
 
+## Resolving the Test Command
+
+Before any RED/GREEN verification, figure out how tests are actually run in this project. Test commands are project-specific -- hardcoding `npm test` is wrong for Python, Java, or Swift projects. Use this order:
+
+1. Read `.superharness/spec/testing/index.md`. If it documents the test command, use that -- the spec is the source of truth the project has already agreed on.
+2. Otherwise, infer from the project manifest at the repo root:
+   - `package.json` -> `npm test` (or `pnpm test` / `yarn test` if the lockfile indicates)
+   - `pyproject.toml` / `requirements.txt` / `Pipfile` / `setup.py` -> `pytest`
+   - `pom.xml` -> `mvn test`
+   - `build.gradle(.kts)` -> `./gradlew test`
+   - `Package.swift` -> `swift test`
+   - only a `*.xcodeproj` bundle -> `xcodebuild test -scheme <scheme> -destination <destination>` (ask the user for scheme/destination if unknown)
+3. If the framework supports single-file / single-test invocation, use it to keep RED/GREEN loops fast (e.g., `pytest tests/test_foo.py::test_bar`, `./gradlew test --tests com.acme.MathXTest.gcd_handles_zero`).
+4. Once resolved, record the command in `.superharness/spec/testing/index.md` so future runs skip step 2.
+
+Throughout the rest of this skill, wherever you see `<test command>` in an example, substitute the command you resolved here.
+
 ## Trace Logging
 
 Log TDD phase transitions to `trace.jsonl` for observability:
@@ -134,7 +151,8 @@ After verifying failure, log the trace event:
 **MANDATORY. Never skip.**
 
 ```bash
-npm test path/to/test.test.ts
+# See "Resolving the Test Command" above
+<test command> <test file or target>
 ```
 
 Confirm:
@@ -189,7 +207,8 @@ Don't add features, refactor other code, or "improve" beyond the test.
 **MANDATORY.**
 
 ```bash
-npm test path/to/test.test.ts
+# See "Resolving the Test Command" above
+<test command> <test file or target>
 ```
 
 Confirm:
@@ -312,6 +331,8 @@ Tests-first force edge case discovery before implementing. Tests-after verify yo
 **All of these mean: Delete code. Start over with TDD.**
 
 ## Example: Bug Fix
+
+This example uses JavaScript/TypeScript for illustration; the same RED-GREEN-REFACTOR workflow applies in any language -- substitute your resolved test command (see "Resolving the Test Command" above) and language-appropriate test syntax.
 
 **Bug:** Empty email accepted
 
