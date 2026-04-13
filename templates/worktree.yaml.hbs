@@ -5,5 +5,4 @@ worktree_dir: .worktrees
 #   worktree 中新建独立的 .current-task 指针
 post_create: []
 verify:
-  - npm test
-  - npx tsc --noEmit
+{{verifyCommands}}

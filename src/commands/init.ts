@@ -1,5 +1,12 @@
 import { Command } from "commander";
-import { existsSync, mkdirSync, cpSync, writeFileSync, readFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	cpSync,
+	writeFileSync,
+	readFileSync,
+	readdirSync,
+} from "node:fs";
 import { join } from "node:path";
 import pc from "picocolors";
 import { log, logSuccess, logWarn } from "../utils/log.js";
@@ -72,6 +79,46 @@ function copySpecTemplate(
 	logSuccess(`已复制规范模板: ${pc.bold(template)}`);
 }
 
+type DetectedProject = {
+	label: string;
+	verifyCommands: string[];
+};
+
+function detectProject(projectDir: string): DetectedProject {
+	const has = (name: string) => existsSync(join(projectDir, name));
+	const hasExt = (ext: string) => {
+		try {
+			return readdirSync(projectDir).some((f) => f.endsWith(ext));
+		} catch {
+			return false;
+		}
+	};
+
+	if (has("package.json"))
+		return { label: "JS/TS", verifyCommands: ["npm test", "npx tsc --noEmit"] };
+	if (
+		has("pyproject.toml") ||
+		has("requirements.txt") ||
+		has("Pipfile") ||
+		has("setup.py")
+	)
+		return { label: "Python", verifyCommands: ["pytest"] };
+	if (has("pom.xml")) return { label: "Maven", verifyCommands: ["mvn test"] };
+	if (has("build.gradle") || has("build.gradle.kts"))
+		return { label: "Gradle", verifyCommands: ["./gradlew test"] };
+	if (has("Package.swift"))
+		return { label: "Swift (SPM)", verifyCommands: ["swift test"] };
+	if (hasExt(".xcodeproj"))
+		return { label: "Swift (Xcode)", verifyCommands: [] };
+	return { label: "未识别", verifyCommands: [] };
+}
+
+function renderVerifyBlock(cmds: string[]): string {
+	if (cmds.length === 0)
+		return "  []  # TODO: 根据你的项目补充 verify 命令 (e.g., xcodebuild test -scheme ...)";
+	return cmds.map((c) => `  - ${c}`).join("\n");
+}
+
 function copyInitTemplates(projectDir: string, packageRoot: string): void {
 	const templatesDir = join(packageRoot, "templates");
 	const shDir = join(projectDir, SUPERHARNESS_DIR);
@@ -82,17 +129,22 @@ function copyInitTemplates(projectDir: string, packageRoot: string): void {
 		"worktree.yaml.hbs": "worktree.yaml",
 	};
 
+	const detected = detectProject(projectDir);
+	const verifyBlock = renderVerifyBlock(detected.verifyCommands);
+
 	for (const [src, dest] of Object.entries(templateFiles)) {
 		const srcPath = join(templatesDir, src);
 		const destPath = join(shDir, dest);
 		if (existsSync(srcPath)) {
 			const content = readFileSync(srcPath, "utf-8");
 			const projectName = projectDir.split("/").pop() || "my-project";
-			const rendered = content.replaceAll("{{projectName}}", projectName);
+			const rendered = content
+				.replaceAll("{{projectName}}", projectName)
+				.replaceAll("{{verifyCommands}}", verifyBlock);
 			writeFileSync(destPath, rendered);
 		}
 	}
-	logSuccess("已生成配置文件");
+	logSuccess(`已生成配置文件 (检测到 ${pc.bold(detected.label)} 项目)`);
 }
 
 export const initCommand = new Command("init")
