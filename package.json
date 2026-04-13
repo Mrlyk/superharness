@@ -1,6 +1,6 @@
 {
   "name": "superharness",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "AI tool-agnostic workflow engine for software engineering",
   "type": "module",
   "bin": {
