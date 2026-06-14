@@ -143,6 +143,7 @@ describe("update command", () => {
 
 	it("reads platforms from config.yaml when present", async () => {
 		await runCommand(initCommand, "init", [
+			"--full",
 			"--platforms",
 			"claude-code,cursor",
 		]);
@@ -152,5 +153,32 @@ describe("update command", () => {
 			true,
 		);
 		expect(existsSync(join(projectDir, ".cursor", "commands"))).toBe(true);
+	});
+
+	it("lite is the default: installs only the four-capability set", async () => {
+		await runCommand(initCommand, "init", []);
+		const cmds = join(projectDir, ".claude", "skills");
+		expect(existsSync(join(cmds, "clarify"))).toBe(true);
+		expect(existsSync(join(cmds, "test"))).toBe(true);
+		// heavy workflow skills must NOT be installed in lite
+		expect(existsSync(join(cmds, "go"))).toBe(false);
+		expect(
+			existsSync(join(projectDir, ".superharness", "learnings", "INDEX.md")),
+		).toBe(true);
+		const config = readFileSync(
+			join(projectDir, ".superharness", "config.yaml"),
+			"utf-8",
+		);
+		expect(config).toContain('mode: "lite"');
+
+		// update must keep it lite — no full skills leak in, mode preserved
+		await runCommand(updateCommand, "update", []);
+		expect(existsSync(join(cmds, "go"))).toBe(false);
+		expect(
+			readFileSync(
+				join(projectDir, ".superharness", "config.yaml"),
+				"utf-8",
+			),
+		).toContain('mode: "lite"');
 	});
 });

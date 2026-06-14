@@ -86,3 +86,22 @@ export function copyHookScripts(
 	}
 	return copied;
 }
+
+// Lite hooks are committed plain JS (no build step), copied straight from
+// hooks/lite/ — not the tsup-compiled dist/hooks/ that full mode uses.
+export function copyLiteHooks(
+	packageRoot: string,
+	destHooksDir: string,
+	files: string[],
+): number {
+	mkdirSync(destHooksDir, { recursive: true });
+	let copied = 0;
+	for (const file of files) {
+		const src = join(packageRoot, "hooks", "lite", file);
+		if (existsSync(src)) {
+			cpSync(src, join(destHooksDir, file));
+			copied++;
+		}
+	}
+	return copied;
+}

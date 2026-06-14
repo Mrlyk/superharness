@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-06-15 — 0.9.0
+
+「Less is more」。随着模型能力增强，原来那套从头到尾的强制工作流对**存量项目维护**偏重。0.9.0 引入 **lite 模式**：用最小的套件接入存量项目，以自学习为核，去掉强制工作流。完整 greenfield 工作流保留为 `--full`，零改动、零回归。
+
+### Added
+
+- **Lite 模式（新默认）** -- `superharness init` 默认安装精简版：四个核心能力（clarify / discover / learn / test）+ 自学习，不再铺 `tasks/` / `workspace/` / `workflow.md` / spec 模板等重脚手架。`init --full` 仍装完整 greenfield 工作流。模式写入 `config.yaml` 的 `_meta.mode`，`update` 按模式分流刷新（lite 项目不会被混入 full 的 skill）。
+- **自学习（横切核心）** -- 会话中积累的踩坑/修复/决策自动沉淀到 `.superharness/learnings/`（topic wiki，`INDEX.md` 注入后续会话）。`stop-learn` 钩子在会话累积足够新工作时**后台 spawn** 一个 `claude -p` / `codex exec` 学习器离线更新 wiki（游标节流，一个会话可多次触发，非一次性）；`session-start` 钩子注入 learnings 索引。
+- **终检门控（verify-before-done）** -- `stop-verify` 钩子在「改了代码但没跑过」时阻断一次收尾，要求先跑改动+对抗性边界用例自测、只修真实失败、**不重构已通过的代码**。新建未跟踪代码文件无视行阈值一律门控；已跟踪文件的小改守 20 行阈值（`SUPERHARNESS_VERIFY_MIN_LINES` 可调）。重的 Spec + Code Review 双规范检查留给**显式** `/superharness:test` 技能，全部任务完成后跑一次。
+- **discover retarget 到 spec 模型** -- 沿用 SuperSkills 的 discover 能力，但详细规范落到 SuperHarness 的 `.superharness/spec/` 树（非 `conventions.md`），`AGENTS.md` / `CLAUDE.md` 作每会话只加载的薄入口。spec（项目规范）与 learnings（学习沉淀）职责分清，唯一桥是「沉淀成稳定规范后晋升进 spec」。
+- **三平台 lite 接线** -- claude-code（`.claude/skills/` 自动触发 + Stop/SessionStart 钩子）、aone-copilot（`.aone_copilot/`）、codex（`.codex/`，学习器走 `codex exec`）。lite 钩子为提交的 `.cjs`（强制 CommonJS，与项目 `type:module` 无关）。
+- **HumanEval+ A/B 基准（北极星）** -- `tests/bench/heval-lite.sh` 复用社区 HumanEval+ 数据集与评分，A/B 对比裸模型 vs lite 安装。`tests/lite-hooks.sh` 锁定钩子行为（11 用例）。
+- **同步脚本** -- `scripts/sync-superskills.mjs` 把可逐字移植的 SuperSkills 资产（clarify/learn 技能、stop-learn/learn-prompt 钩子）同步进来并做 `superskills→superharness` 改写。
+
+### Fixed
+
+- **stop-verify 由「每会话一次」改为游标重触发** -- 终检门控原先用一次性 marker，一个会话只触发一次；改为按代码改动量游标重触发，多轮编码每轮都能门控。（上游 SuperSkills 同步修复。）
+
 ## 2026-04-13
 
 ### Added

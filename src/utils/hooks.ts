@@ -37,9 +37,11 @@ export function mergeHookConfig(
 		const shExists = existing.some((e) =>
 			e.hooks?.some(
 				(h) =>
-					h.command.includes("session-start.js") ||
-					h.command.includes("pre-tool-use.js") ||
-					h.command.includes("subagent-stop.js"),
+					h.command.includes("session-start") ||
+					h.command.includes("pre-tool-use") ||
+					h.command.includes("subagent-stop") ||
+					h.command.includes("stop-verify") ||
+					h.command.includes("stop-learn"),
 			),
 		);
 

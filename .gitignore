@@ -5,3 +5,5 @@ examples/
 .DS_Store
 .idea
 skills/*-workspace/
+.superskills/
+tests/bench/results/

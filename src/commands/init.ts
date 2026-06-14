@@ -14,6 +14,7 @@ import { getPackageRoot } from "../utils/fs.js";
 import { PLATFORMS, type Platform, setupPlatform } from "../platforms/index.js";
 import { confirm } from "../utils/prompt.js";
 import { writeMeta } from "../utils/meta.js";
+import { setupLite } from "./init-lite.js";
 
 const SUPERHARNESS_DIR = ".superharness";
 
@@ -182,12 +183,14 @@ export const initCommand = new Command("init")
 	)
 	.option("-f, --force", "已初始化时强制覆盖 (需二次确认)", false)
 	.option("-y, --yes", "所有交互默认 yes (CI 场景)", false)
+	.option("--full", "安装完整 greenfield 工作流 (默认安装 lite 精简版)", false)
 	.action(
 		async (options: {
 			platforms: string;
 			template: string;
 			force: boolean;
 			yes: boolean;
+			full: boolean;
 		}) => {
 			const projectDir = process.cwd();
 			const packageRoot = getPackageRoot();
@@ -234,9 +237,7 @@ export const initCommand = new Command("init")
 				(PLATFORMS as readonly string[]).includes(p),
 			);
 
-			createSuperHarnessDir(projectDir, packageRoot);
-			copySpecTemplate(projectDir, template, packageRoot);
-			copyInitTemplates(projectDir, packageRoot, validPlatforms);
+			const mode = options.full ? "full" : "lite";
 
 			console.log("");
 			if (isDefaultPlatform) {
@@ -246,25 +247,46 @@ export const initCommand = new Command("init")
 			} else {
 				log(`平台: ${pc.bold(platforms.join(", "))}`);
 			}
-			for (const platform of platforms) {
-				if (!PLATFORMS.includes(platform)) {
-					logWarn(`未知平台 "${platform}"，已跳过`);
-					continue;
+			log(
+				`模式: ${pc.bold(mode)} ${pc.dim(mode === "lite" ? "(精简版，--full 装完整工作流)" : "(完整 greenfield 工作流)")}`,
+			);
+
+			if (mode === "lite") {
+				setupLite(projectDir, packageRoot, validPlatforms);
+			} else {
+				createSuperHarnessDir(projectDir, packageRoot);
+				copySpecTemplate(projectDir, template, packageRoot);
+				copyInitTemplates(projectDir, packageRoot, validPlatforms);
+				for (const platform of platforms) {
+					if (!PLATFORMS.includes(platform)) {
+						logWarn(`未知平台 "${platform}"，已跳过`);
+						continue;
+					}
+					setupPlatform(platform, projectDir, packageRoot);
 				}
-				setupPlatform(platform, projectDir, packageRoot);
 			}
 
 			writeMeta(join(shDir, "config.yaml"), {
 				superharnessVersion: readPackageVersion(packageRoot),
 				lastUpdatedAt: new Date().toISOString(),
+				mode,
 			});
 
 			console.log("");
 			logSuccess("初始化完成!");
-			log(
-				`下一步: 在 AI 工具中运行 ${pc.bold('/superharness:go "你的需求或需求链接"')}`,
-			);
-			log(`编辑 ${pc.dim(".superharness/spec/")} 自定义项目规范`);
+			if (mode === "lite") {
+				log(
+					`下一步: 让 AI 扫描代码库生成规范 (discover 技能)，之后正常开发`,
+				);
+				log(
+					`clarify / discover / learn / test 四个技能按描述自动触发；经验沉淀到 ${pc.dim(".superharness/learnings/")}`,
+				);
+			} else {
+				log(
+					`下一步: 在 AI 工具中运行 ${pc.bold('/superharness:go "你的需求或需求链接"')}`,
+				);
+				log(`编辑 ${pc.dim(".superharness/spec/")} 自定义项目规范`);
+			}
 			console.log("");
 		},
 	);

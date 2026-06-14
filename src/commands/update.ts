@@ -19,7 +19,8 @@ import {
 	detectPkgManager,
 } from "../utils/pkg-manager.js";
 import { confirm } from "../utils/prompt.js";
-import { readPlatforms, writeMeta } from "../utils/meta.js";
+import { readMode, readPlatforms, writeMeta } from "../utils/meta.js";
+import { setupLitePlatform } from "../platforms/lite.js";
 
 const SUPERHARNESS_DIR = ".superharness";
 const PLATFORM_MARKERS: Record<Platform, string[]> = {
@@ -215,6 +216,7 @@ export const updateCommand = new Command("update")
 
 		await maybeUpgradeGlobal(packageRoot, pkg, options.yes);
 
+		const mode = readMode(join(shDir, "config.yaml")) ?? "full";
 		const platforms = resolvePlatforms(projectDir);
 		if (platforms.length === 0) {
 			logWarn(
@@ -222,23 +224,31 @@ export const updateCommand = new Command("update")
 			);
 		} else {
 			console.log("");
-			log(`将刷新平台: ${pc.bold(platforms.join(", "))}`);
+			log(`将刷新平台 (${mode}): ${pc.bold(platforms.join(", "))}`);
 			for (const platform of platforms) {
-				setupPlatform(platform, projectDir, packageRoot);
+				if (mode === "lite") {
+					setupLitePlatform(platform, projectDir, packageRoot);
+				} else {
+					setupPlatform(platform, projectDir, packageRoot);
+				}
 			}
 		}
 
-		refreshUsingSkill(projectDir, packageRoot);
-
-		if (options.force) {
-			await applyForceOverwrite(projectDir, packageRoot, options.yes);
-		} else {
-			reportSkippedUserFiles(projectDir);
+		// using-superharness injection and spec/workflow force-overwrite are
+		// full-only; lite has neither.
+		if (mode === "full") {
+			refreshUsingSkill(projectDir, packageRoot);
+			if (options.force) {
+				await applyForceOverwrite(projectDir, packageRoot, options.yes);
+			} else {
+				reportSkippedUserFiles(projectDir);
+			}
 		}
 
 		writeMeta(join(shDir, "config.yaml"), {
 			superharnessVersion: pkg.version,
 			lastUpdatedAt: new Date().toISOString(),
+			mode,
 		});
 
 		console.log("");

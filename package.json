@@ -1,6 +1,6 @@
 {
   "name": "superharness",
-  "version": "0.2.0",
+  "version": "0.9.0",
   "description": "AI tool-agnostic workflow engine for software engineering",
   "type": "module",
   "bin": {
@@ -20,6 +20,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
+    "test:hooks": "bash tests/lite-hooks.sh",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
