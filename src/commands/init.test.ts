@@ -61,7 +61,7 @@ describe("init command", () => {
 	});
 
 	it("creates .superharness/ with rendered platforms and _meta", async () => {
-		const code = await runInit(["--platforms", "claude-code,cursor"]);
+		const code = await runInit(["--full", "--platforms", "claude-code,cursor"]);
 		expect(code).toBe(0);
 
 		const configPath = join(projectDir, ".superharness", "config.yaml");
@@ -72,6 +72,18 @@ describe("init command", () => {
 		expect(config).toContain("- cursor");
 		expect(config).toContain("_meta:");
 		expect(config).toMatch(/superharnessVersion: ".+"/);
+	});
+
+	it("lite drops platforms it does not support from config", async () => {
+		const code = await runInit(["--platforms", "claude-code,cursor"]);
+		expect(code).toBe(0);
+		const config = readFileSync(
+			join(projectDir, ".superharness", "config.yaml"),
+			"utf-8",
+		);
+		expect(config).toContain("- claude-code");
+		expect(config).not.toContain("- cursor");
+		expect(config).toContain('mode: "lite"');
 	});
 
 	it("refuses to re-init when .superharness/ already exists", async () => {

@@ -6,6 +6,7 @@ const META_BLOCK_RE = /(^|\n)_meta:\n(?:[ \t]+.*\n?)*/;
 export interface MetaInfo {
 	superharnessVersion: string;
 	lastUpdatedAt: string;
+	mode?: "lite" | "full";
 }
 
 function renderMetaBlock(meta: MetaInfo): string {
@@ -13,6 +14,7 @@ function renderMetaBlock(meta: MetaInfo): string {
 		META_HEADER,
 		`  superharnessVersion: "${meta.superharnessVersion}"`,
 		`  lastUpdatedAt: "${meta.lastUpdatedAt}"`,
+		...(meta.mode ? [`  mode: "${meta.mode}"`] : []),
 		"",
 	].join("\n");
 }
@@ -47,4 +49,11 @@ export function readPlatforms(configPath: string): string[] | null {
 		.map((line) => line.slice(1).trim().replace(/^["']|["']$/g, ""))
 		.filter(Boolean);
 	return items.length ? items : null;
+}
+
+export function readMode(configPath: string): "lite" | "full" | null {
+	if (!existsSync(configPath)) return null;
+	const content = readFileSync(configPath, "utf-8");
+	const m = content.match(/\bmode:\s*["']?(lite|full)["']?/);
+	return m ? (m[1] as "lite" | "full") : null;
 }
