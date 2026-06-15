@@ -191,6 +191,12 @@ describe("update command", () => {
 		expect(
 			existsSync(join(projectDir, ".claude", "hooks", "session-start.js")),
 		).toBe(true);
+		const fullManual = join(
+			projectDir,
+			".superharness",
+			"using-superharness.md",
+		);
+		expect(existsSync(fullManual)).toBe(true);
 
 		// user spec sentinel must survive the switch
 		const specSentinel = join(
@@ -218,12 +224,13 @@ describe("update command", () => {
 			existsSync(join(projectDir, ".claude", "hooks", "session-start.cjs")),
 		).toBe(true);
 
-		// lite manual present, user spec preserved, mode flipped
+		// lite manual present, stale full manual removed, user spec preserved, mode flipped
 		expect(
 			existsSync(
 				join(projectDir, ".superharness", "using-superharness-lite.md"),
 			),
 		).toBe(true);
+		expect(existsSync(fullManual)).toBe(false);
 		expect(readFileSync(specSentinel, "utf-8")).toBe("# user content");
 		expect(
 			readFileSync(join(projectDir, ".superharness", "config.yaml"), "utf-8"),
