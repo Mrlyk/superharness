@@ -43,12 +43,22 @@ No forced workflow, no `tasks/` / `worktree` scaffolding. Self-learning and the 
 
 ### Benchmark
 
-A/B on the **HumanEval+ hard subset** — the 11 problems the baseline (Sonnet) fails — run with `claude -p`, 16 trials per arm:
+A/B on the same tasks, same model (Sonnet), real end-to-end `claude -p` runs, deterministic graders. Arm A is the bare model; arm B is the same model with `superharness init` (lite) in the fixture, so the four lite capabilities are the only variable. Cells are mean check score (or pass@1 for the code rows). Full methodology and per-check tables in [docs/benchmark-lite.md](docs/benchmark-lite.md).
 
-| Arm | pass@1 |
-|-----|--------|
-| Baseline (bare model) | 35% (61/176) |
-| + superharness lite | **39% (68/176)** &nbsp; **+4pp** |
+| Scenario | Baseline (bare model) | + superharness lite | Δ |
+|----------|-----------------------|---------------------|---|
+| Auto-learning · recall | 56% | 100% | **+44pp** |
+| Auto-learning · precision (wiki) | 29% | 100% | **+71pp** |
+| Cross-session memory | 20% | 100% | **+80pp** |
+| Requirement clarification | 0% | 33% | **+33pp** |
+| Clarify · self-triggered | 0% | 67% | **+67pp** |
+| Clarify · over-ask guard (clear task) | — | 100% | guard holds |
+| Final test pass | 40% | 53% | **+13pp** |
+| Convention adherence | 100% | 100% | even |
+| HumanEval+ hard subset | 30% | 57% | **+27pp** |
+| Control · HumanEval/0–9 | 100% | 100% | no regression |
+
+The biggest lifts are the compounding capabilities: cross-session memory (+80pp), auto-learning the right durable rules while rejecting throwaways (+71pp), and the clarify skill auto-triggering on ambiguous requests without over-asking on clear ones. On the community **HumanEval+ hard subset** (the 7 problems the Sonnet baseline fails, 8 trials per arm) the verify-before-done gate forces the model to run its solution against edge cases before finishing, lifting pass@1 30% → 57%. The control set (easy HumanEval/0–9) confirms no regression. Reproduce: `tests/bench/lite-suite.sh`, `lite-learn.sh [--hard]`, `lite-clarify.sh`, `heval-lite.sh --plus`.
 
 ### Full (`--full`) — greenfield projects
 
