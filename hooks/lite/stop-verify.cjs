@@ -61,7 +61,7 @@ function git(root, args) {
 // is right now. Doc-only churn does not count.
 function codeChurn(root) {
   let churn = 0;
-  let newFiles = 0;
+  const newSet = new Set();
   const numstat = git(root, ['diff', '--numstat', 'HEAD', '--']);
   if (numstat) {
     for (const line of numstat.split('\n')) {
@@ -73,17 +73,27 @@ function codeChurn(root) {
       churn += (parseInt(add, 10) || 0) + (parseInt(del, 10) || 0);
     }
   }
+  // Files added vs HEAD — covers a NEW file that was already `git add`ed (numstat
+  // counts its lines toward churn, but it is no longer "untracked").
+  const added = git(root, ['diff', '--diff-filter=A', '--name-only', 'HEAD', '--']);
+  if (added) {
+    for (const file of added.split('\n')) {
+      if (file.trim() && CODE_EXT.test(file) && !IGNORE_DIR.test(file))
+        newSet.add(file);
+    }
+  }
+  // Untracked code files are not in `git diff` at all — count their lines too.
   const others = git(root, ['ls-files', '--others', '--exclude-standard']);
   if (others) {
     for (const file of others.split('\n')) {
       if (!file.trim() || !CODE_EXT.test(file) || IGNORE_DIR.test(file)) continue;
-      newFiles++;
+      newSet.add(file);
       try {
         churn += fs.readFileSync(path.join(root, file), 'utf8').split('\n').length;
       } catch { /* unreadable, skip */ }
     }
   }
-  return { churn, newFiles };
+  return { churn, newFiles: newSet.size };
 }
 
 function readState(file) {

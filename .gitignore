@@ -7,3 +7,6 @@ examples/
 skills/*-workspace/
 .superskills/
 tests/bench/results/
+# local self-install (dogfooding) — not part of the package
+.claude/
+.superharness/

@@ -34,6 +34,10 @@ assert_contains "new code file gates regardless of size" "$(verify s1 "$R")" '"d
 assert_empty "same state stays silent (churn cursor)" "$(verify s1 "$R")"
 
 git -C "$R" add -A; git -C "$R" commit -qm base >/dev/null 2>&1
+# a NEW file already `git add`ed must still gate (not only untracked ones)
+nlines 6 > "$R/staged.py"; git -C "$R" add staged.py
+assert_contains "staged new code file gates regardless of size" "$(verify sg "$R")" '"decision":"block"'
+git -C "$R" rm -q --cached staged.py >/dev/null 2>&1; rm -f "$R/staged.py"
 printf 'a=1\nb=2\n' >> "$R/sol.py"
 assert_empty "small edit to a tracked file stays silent" "$(verify s2 "$R")"
 
