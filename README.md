@@ -26,18 +26,22 @@ Superharness is not another AI coding tool. It's a **workflow program that runs 
 
 AI coding tools are powerful, but unconstrained power is dangerous: skipping tests, drifting from requirements, writing code that runs but can't be maintained, declaring "done" without verification. Superharness turns development discipline into mechanically enforced workflows, not suggestions the AI can rationalize away.
 
-## Lite Mode (default since 0.9.0)
+## How it works
 
-As models get stronger, the full end-to-end workflow (below) is heavier than most **existing-project maintenance** needs. `superharness init` now installs a **lite** harness by default — the four capabilities that still compound in value as models improve, and nothing else:
+Superharness runs in **two modes**, chosen at `init`. Maintaining an existing project? Use **lite** — the default. Starting something greenfield and want the full discipline end to end? Use **full** (`--full`). Both share the same skills and hooks; full just adds the heavy task/worktree/review workflow on top.
+
+### Lite (default) — existing-project maintenance
+
+As models get stronger, the full end-to-end workflow (below) is heavier than most **existing-project maintenance** needs. `superharness init` installs a **lite** harness by default — the four capabilities that still compound in value as models improve, and nothing else:
 
 - **learn** — durable learnings from each session (corrections, pitfalls, decisions) persist to `.superharness/learnings/` and load into future sessions. Self-learning is the core.
 - **discover** — scan the codebase once and write a minimal project spec: `AGENTS.md` + `CLAUDE.md` as the thin always-loaded entry, detail under `.superharness/spec/`.
-- **clarify** — surface genuinely-undecided requirements and ask before coding; stay out of the way when the request is already clear.
+- **clarify** — Active requirement clarification, ask first before writing if the model is not missing timing.
 - **test** — a verify-before-done gate that makes the model run its code (documented examples + adversarial edge cases) before declaring done, plus an explicit Spec + Code review skill to run once when a whole task is complete.
 
-No forced workflow, no `tasks/` / `worktree` scaffolding. Self-learning and the verify gate run automatically via hooks. `superharness init --full` installs the complete greenfield workflow described under **How it works**.
+No forced workflow, no `tasks/` / `worktree` scaffolding. Self-learning and the verify gate run automatically via hooks — just code, the harness stays out of the way. `superharness init --full` installs the complete greenfield workflow below.
 
-### Benchmark (north-star)
+### Benchmark
 
 A/B on the **HumanEval+ hard subset** — the 11 problems the baseline (Sonnet) fails — run with `claude -p`, 16 trials per arm:
 
@@ -46,9 +50,9 @@ A/B on the **HumanEval+ hard subset** — the 11 problems the baseline (Sonnet) 
 | Baseline (bare model) | 35% (61/176) |
 | + superharness lite | **39% (68/176)** &nbsp; **+4pp** |
 
-The lift comes from the verify-before-done gate: lite forces the model to run its solution against edge cases before finishing, catching bugs a single-shot pass misses — on one problem the baseline never solves, lite passes 5/16. The optimization loop that produced this also caught a harmful early default — a heavy review on *every* change that over-edited working code (−11pp) — and corrected it. Reproduce: `tests/bench/heval-lite.sh --plus`.
+### Full (`--full`) — greenfield projects
 
-## How it works (`--full`)
+The complete end-to-end workflow, for building something new from scratch:
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Mrlyk/superharness/main/docs/images/superharness-workflow-en.svg" alt="Superharness Workflow Overview" width="100%" />
@@ -69,7 +73,7 @@ The lift comes from the verify-before-done gate: lite forces the model to run it
 
 The AI tool runs autonomously through the entire process. You only participate during brainstorming.
 
-**Small changes don't need this workflow.** The session-start hook injects project conventions and the dispatch protocol into every AI session automatically. Fix a bug, tweak a config, change a few lines — just say it, no superharness commands needed.
+**Small changes don't need the full workflow.** The session-start hook injects project conventions and the dispatch protocol into every AI session automatically. Fix a bug, tweak a config, change a few lines — just say it, no superharness commands needed.
 
 ## Getting Started
 
@@ -304,7 +308,8 @@ superharness trace --diff task1 task2                          # Compare two tas
 
 | Command | Purpose |
 |---------|---------|
-| `superharness init` | Initialize project + copy skills/agents/hooks to platform directories |
+| `superharness init` | Initialize — **lite** by default; `--full` installs the greenfield workflow. Flags: `--platforms <a,b>`, `--template <name>` (full), `--force` |
+| `superharness update` | Refresh skills/agents/hooks, **preserve** `.superharness/spec/` & `learnings/`. `--lite` migrates a full project to lite; `--force` resets config; `-y` skips prompts |
 | `superharness sync` | Re-sync after spec/skill changes |
 | `superharness spec add` | Add spec template (monorepo) |
 | `superharness task list` | View task progress |
