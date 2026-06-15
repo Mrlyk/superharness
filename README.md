@@ -9,15 +9,16 @@
 </p>
 
 <p align="center">
+  <a href="#benchmark">Benchmark</a> &bull;
   <a href="#getting-started">Getting Started</a> &bull;
+  <a href="#lite-mode">Lite Mode</a> &bull;
   <a href="#multi-platform-support">Multi-Platform</a> &bull;
-  <a href="#acknowledgements">Acknowledgements</a> &bull;
   <a href="./README.zh-CN.md">中文文档</a>
 </p>
 
 <p align="center">
 <sub>Harness your AI coding tools &mdash; a tool-agnostic software engineering workflow engine</sub><br />
-  <sub>Works with Claude Code, Cursor, Codex, Qoder, Aone Copilot, Gemini CLI, GitHub Copilot</sub>
+  <sub>Works with Claude Code, Codex, Qoder, GitHub Copilot</sub>
 </p>
 
 ## What is this?
@@ -26,24 +27,11 @@ Superharness is not another AI coding tool. It's a **workflow program that runs 
 
 AI coding tools are powerful, but unconstrained power is dangerous: skipping tests, drifting from requirements, writing code that runs but can't be maintained, declaring "done" without verification. Superharness turns development discipline into mechanically enforced workflows, not suggestions the AI can rationalize away.
 
-## How it works
+It ships in **two modes**, chosen at `init`: **lite** (the default) for maintaining an existing project — a minimal always-on harness of four compounding capabilities; and **full** (`--full`) for greenfield work — the complete end-to-end workflow.
 
-Superharness runs in **two modes**, chosen at `init`. Maintaining an existing project? Use **lite** — the default. Starting something greenfield and want the full discipline end to end? Use **full** (`--full`). Both share the same skills and hooks; full just adds the heavy task/worktree/review workflow on top.
+## Benchmark
 
-### Lite (default) — existing-project maintenance
-
-As models get stronger, the full end-to-end workflow (below) is heavier than most **existing-project maintenance** needs. `superharness init` installs a **lite** harness by default — the four capabilities that still compound in value as models improve, and nothing else:
-
-- **learn** — durable learnings from each session (corrections, pitfalls, decisions) persist to `.superharness/learnings/` and load into future sessions. Self-learning is the core.
-- **discover** — scan the codebase once and write a minimal project spec: `AGENTS.md` + `CLAUDE.md` as the thin always-loaded entry, detail under `.superharness/spec/`.
-- **clarify** — Active requirement clarification, ask first before writing if the model is not missing timing.
-- **test** — a verify-before-done gate that makes the model run its code (documented examples + adversarial edge cases) before declaring done, plus an explicit Spec + Code review skill to run once when a whole task is complete.
-
-No forced workflow, no `tasks/` / `worktree` scaffolding. Self-learning and the verify gate run automatically via hooks — just code, the harness stays out of the way. `superharness init --full` installs the complete greenfield workflow below.
-
-### Benchmark
-
-A/B on the same tasks, same model (Sonnet), real end-to-end `claude -p` runs, deterministic graders. Arm A is the bare model; arm B is the same model with `superharness init` (lite) in the fixture, so the four lite capabilities are the only variable. Cells are mean check score (or pass@1 for the code rows). Full methodology and per-check tables in [docs/benchmark-lite.md](docs/benchmark-lite.md).
+A/B on the same tasks and model (Sonnet), deterministic graders. Full methodology and per-check tables in [docs/benchmark-lite.md](docs/benchmark-lite.md).
 
 | Scenario | Baseline (bare model) | + superharness lite | Δ |
 |----------|-----------------------|---------------------|---|
@@ -52,70 +40,40 @@ A/B on the same tasks, same model (Sonnet), real end-to-end `claude -p` runs, de
 | Cross-session memory | 20% | 100% | **+80pp** |
 | Requirement clarification | 0% | 33% | **+33pp** |
 | Clarify · self-triggered | 0% | 67% | **+67pp** |
-| Clarify · over-ask guard (clear task) | — | 100% | guard holds |
 | Final test pass | 40% | 53% | **+13pp** |
 | Convention adherence | 100% | 100% | even |
 | HumanEval+ hard subset | 30% | 57% | **+27pp** |
 | Control · HumanEval/0–9 | 100% | 100% | no regression |
 
-The biggest lifts are the compounding capabilities: cross-session memory (+80pp), auto-learning the right durable rules while rejecting throwaways (+71pp), and the clarify skill auto-triggering on ambiguous requests without over-asking on clear ones. On the community **HumanEval+ hard subset** (the 7 problems the Sonnet baseline fails, 8 trials per arm) the verify-before-done gate forces the model to run its solution against edge cases before finishing, lifting pass@1 30% → 57%. The control set (easy HumanEval/0–9) confirms no regression. Reproduce: `tests/bench/lite-suite.sh`, `lite-learn.sh [--hard]`, `lite-clarify.sh`, `heval-lite.sh --plus`.
-
-### Full (`--full`) — greenfield projects
-
-The complete end-to-end workflow, for building something new from scratch:
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Mrlyk/superharness/main/docs/images/superharness-workflow-en.svg" alt="Superharness Workflow Overview" width="100%" />
-</p>
-
-```
-/superharness:go "Build a travel planning app"
-
-  1. Brainstorm ── Clarify requirements one question at a time, propose 2-3 approaches, user approves design
-     (First run: auto-scans codebase, generates conventions to .superharness/spec/)
-  2. Plan ── Generate bite-sized tasks (2-5 min each), complete code, precise file paths
-  3. Isolate ── Auto-create git worktree, work on isolated branch
-  4. TDD ── Per task: write failing test → implement → tests pass → commit
-  5. Review ── Spec compliance review → code quality review, blocks until both pass
-  6. QA ── External QA service (optional), auto-fix issues if found
-  7. Merge ── Merge worktree after all tasks pass, output summary
-```
-
-The AI tool runs autonomously through the entire process. You only participate during brainstorming.
-
-**Small changes don't need the full workflow.** The session-start hook injects project conventions and the dispatch protocol into every AI session automatically. Fix a bug, tweak a config, change a few lines — just say it, no superharness commands needed.
-
 ## Getting Started
 
 ```bash
-# 1. Install
 npm install -g superharness
+```
 
-# 2a. Lite (default) — minimal harness for existing-project maintenance
+**Lite (default)** — existing-project maintenance, installs only `discover` / `clarify` / `test` / `learn`:
+
+```bash
 superharness init
+```
 
-# 2b. Full — the complete greenfield workflow
+Then just code: have your AI run `discover` once to scan the codebase; clarify / test / learn fire automatically via hooks — no commands needed.
+
+**Full (`--full`)** — the complete greenfield workflow:
+
+```bash
 superharness init --full --platforms claude-code --template frontend
-
-# 3. Use it
-#   Lite: ask your AI to scan the codebase and generate conventions — the discover
-#         skill triggers; then just code. clarify / test / learn run automatically.
-#   Full:
 /superharness:go "your requirement or link to spec"
 ```
 
 > [!IMPORTANT]
-> **To update the tool, run `superharness update` — do NOT re-run `init`.**
+> **To update, run `superharness update` — do NOT re-run `init`.** It refreshes the installed skills/agents/hooks while preserving your project content; it also checks the registry and, if the global package is outdated, prompts to upgrade (auto-detecting npm / pnpm / yarn / bun) and re-execs.
 >
-> After upgrading the global package, run inside your project:
+> - **lite** — reconciling reinstall: refresh current skills/hooks, drop retired ones, refresh hook registrations; `.superharness/spec/` and `learnings/` are left untouched.
+> - **full** — refresh skills/agents/hooks, preserve `.superharness/spec/`, `config.yaml`, `workflow.md`, `worktree.yaml`; `--force` resets spec + config (with confirmation).
+> - **full → lite** — `superharness update --lite` (precisely removes full artifacts, keeps `.superharness/` content).
 >
-> ```bash
-> superharness update
-> ```
->
-> It refreshes skills / agents / hooks / platform settings while **preserving** `.superharness/spec/`, `config.yaml`, `workflow.md`, `worktree.yaml` (so your `spec-discover` results aren't wiped). The command also queries the npm registry and, if the global package is outdated, prompts to upgrade — auto-detecting your package manager (npm / pnpm / yarn / bun) and re-executing the new version on success.
->
-> Use `superharness update --force` to reset spec + config files (requires confirmation). Use `superharness init --force` to fully re-initialize. `-y` skips all prompts (CI use).
+> `-y` skips all prompts (CI). Use `superharness init --force` to re-initialize.
 
 <details>
 <summary><strong>Options</strong></summary>
@@ -136,7 +94,48 @@ Multiple platforms: `--platforms claude-code,cursor`
 
 </details>
 
-## Core Capabilities
+## Lite mode
+
+**Less is more.** Lite installs only four compounding capabilities — memory (`learn`), a spec (`discover`), clarification (`clarify`), and a final verify (`test`) — and nothing else.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Mrlyk/superharness/main/docs/images/superharness-lite-workflow-en.svg" alt="Superharness Lite — one self-reinforcing loop" width="100%" />
+</p>
+
+- **discover** — scan the codebase once and write a minimal project spec: `AGENTS.md` + `CLAUDE.md` as the thin always-loaded entry, detail under `.superharness/spec/`.
+- **clarify** — auto-surfaces genuinely-undecided requirements and asks before coding; stays out of the way when the request is already clear.
+- **test** — a verify-before-done gate that makes the model run its code (documented examples + adversarial edge cases) before declaring done, plus an explicit Spec + Code review skill to run once when a whole task is complete.
+- **learn** — durable learnings from each session (corrections, pitfalls, decisions) persist to `.superharness/learnings/` and load into future sessions.
+
+Each capability is a skill: the session-start hook injects the spec + past learnings at the start of every session, and the stop hook runs the verify gate and the background learner when a turn ends.
+
+## Full mode
+
+`superharness init --full` installs the complete end-to-end workflow: **brainstorm → plan → isolate (worktree) → TDD → two-stage review → QA → merge**, driven by `/superharness:go`.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Mrlyk/superharness/main/docs/images/superharness-workflow-en.svg" alt="Superharness full workflow overview" width="100%" />
+</p>
+
+<details>
+<summary><strong>The seven steps in detail</strong></summary>
+
+```
+/superharness:go "Build a travel planning app"
+
+  1. Brainstorm ── Clarify requirements one question at a time, propose 2-3 approaches, user approves design
+     (First run: auto-scans codebase, generates conventions to .superharness/spec/)
+  2. Plan ── Generate bite-sized tasks (2-5 min each), complete code, precise file paths
+  3. Isolate ── Auto-create git worktree, work on isolated branch
+  4. TDD ── Per task: write failing test → implement → tests pass → commit
+  5. Review ── Spec compliance review → code quality review, blocks until both pass
+  6. QA ── External QA service (optional), auto-fix issues if found
+  7. Merge ── Merge worktree after all tasks pass, output summary
+```
+
+The AI tool runs autonomously through the entire process. You only participate during brainstorming. Small changes don't even need this — the session-start hook injects project conventions into every session, so fixing a bug or tweaking a config is just a normal chat, no superharness commands needed.
+
+</details>
 
 ### Three Iron Laws
 
@@ -259,7 +258,20 @@ superharness trace --diff task1 task2                          # Compare two tas
 
 ## Project Structure
 
-`superharness init` creates a `.superharness/` directory in your project:
+In lite mode `superharness init` creates a minimal `.superharness/`:
+
+```
+.superharness/
+├── config.yaml                       # Project config (mode, platforms)
+├── using-superharness-lite.md        # Lite operating manual (SessionStart hook injected)
+├── learnings/                        # Self-learning store
+│   └── INDEX.md
+└── spec/                             # Project conventions (discover-generated, hook-injected entry)
+    └── guides/index.md
+```
+
+<details>
+<summary><strong>Full mode layout</strong></summary>
 
 ```
 .superharness/
@@ -283,11 +295,20 @@ superharness trace --diff task1 task2                          # Compare two tas
 └── .gitignore                        # Excludes runtime state
 ```
 
+</details>
+
 ## Skills
+
+Lite installs only `discover` / `clarify` / `test` / `learn`; full installs the entire table below.
 
 | Category | Skill | Purpose |
 |----------|-------|---------|
-| Workflow | `go` | Main entry: end-to-end workflow orchestration |
+| Lite (default) | `discover` | Scan the codebase into a minimal spec: `AGENTS.md`/`CLAUDE.md` entry + `.superharness/spec/` |
+| | `clarify` | Auto-asks on ambiguous requests, stays quiet when clear |
+| | `test` | Verify-before-done gate + Spec/Code review |
+| | `learn` | Persist session learnings to `.superharness/learnings/`, auto-injected next session |
+| | `using-superharness-lite` | Lite operating manual (SessionStart hook injected) |
+| Full workflow | `go` | Main entry: end-to-end workflow orchestration |
 | | `brainstorm` | Requirement clarification + spec discovery + mindmap |
 | | `writing-plans` | Task decomposition: bite-sized tasks, complete code |
 | | `subagent-driven-development` | Fresh subagent per task + two-stage review |
@@ -304,6 +325,8 @@ superharness trace --diff task1 task2                          # Compare two tas
 | | `mindmap` | Mindmap visualization (Markmap + WebSocket) |
 
 ## Agents
+
+Lite installs only `spec-reviewer` + `code-reviewer`. The four below (`implement` / `check` / `debug` / `research`) are full-mode only.
 
 | Agent | Purpose | Dispatch |
 |-------|---------|----------|
@@ -334,11 +357,8 @@ One set of skill source files, `superharness init` adapts format and paths per p
 | Platform | Skill Directory | Agent Directory | Hook Support |
 |----------|----------------|-----------------|-------------|
 | Claude Code | `.claude/commands/superharness/` | `.claude/agents/` | SessionStart + PreToolUse + SubagentStop |
-| Cursor | `.cursor/commands/` | `.cursor/agents/` | sessionStart + preToolUse + subagentStop |
-| Aone Copilot | `.aone_copilot/skills/` | — | sessionStart + preToolUse + stop |
 | Codex | `.codex/skills/` | — | — |
 | Qoder | `.qoder/skills/` | — | — |
-| Gemini CLI | `.gemini/commands/` (Phase 4) | — | BeforeTool + AfterResponse |
 | GitHub Copilot | `~/.copilot/skills/` | — | TBD |
 
 ## Acknowledgements

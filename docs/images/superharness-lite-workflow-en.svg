@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 660" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+
+  <defs>
+    <marker id="loop" viewBox="0 0 10 8" refX="8" refY="4" markerWidth="9" markerHeight="8" orient="auto">
+      <path d="M 0,0.5 L 9,4 L 0,7.5 Z" fill="#2E7D5B"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="860" height="660" fill="#FAFBFC" rx="4"/>
+
+  <!-- Title -->
+  <text x="430" y="34" text-anchor="middle" font-size="20" font-weight="bold" fill="#1A2332">Superharness Lite — One Self-Reinforcing Loop</text>
+  <text x="430" y="56" text-anchor="middle" font-size="12" fill="#6B7280">discover seeds it once; every session then runs the loop automatically via hooks</text>
+
+  <!-- ==================== The ring (4 clockwise arcs between the stations) ==================== -->
+  <path d="M 510,168 A 190 190 0 0 1 602,260" fill="none" stroke="#2E7D5B" stroke-width="2" marker-end="url(#loop)"/>
+  <path d="M 602,420 A 190 190 0 0 1 510,512" fill="none" stroke="#2E7D5B" stroke-width="2" marker-end="url(#loop)"/>
+  <path d="M 350,512 A 190 190 0 0 1 258,420" fill="none" stroke="#2E7D5B" stroke-width="2" marker-end="url(#loop)"/>
+  <path d="M 258,260 A 190 190 0 0 1 350,168" fill="none" stroke="#2E7D5B" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#loop)"/>
+  <text x="250" y="218" text-anchor="middle" font-size="9" fill="#2E7D5B" font-style="italic" transform="rotate(-45,250,218)">learnings compound</text>
+
+  <!-- ==================== Center: discover seed + shared store ==================== -->
+  <circle cx="430" cy="340" r="95" fill="#FFFFFF" stroke="#2E7D5B" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="430" y="318" text-anchor="middle" font-size="14" font-weight="bold" fill="#2E7D5B">discover</text>
+  <text x="430" y="334" text-anchor="middle" font-size="9" fill="#4A7A60">run once → map the codebase</text>
+  <text x="430" y="356" text-anchor="middle" font-size="10" font-weight="bold" fill="#1A2332">project spec + learnings</text>
+  <text x="430" y="370" text-anchor="middle" font-size="8" fill="#6B7280">.superharness/ · AGENTS.md / CLAUDE.md</text>
+
+  <!-- ==================== Station: Session Start (top, hook) ==================== -->
+  <rect x="345" y="120" width="170" height="60" rx="30" fill="#6B5B95"/>
+  <text x="430" y="146" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">Session Start</text>
+  <text x="430" y="161" text-anchor="middle" font-size="9" fill="#E4DEF2">inject manual · spec · learnings</text>
+  <text x="430" y="173" text-anchor="middle" font-size="8" fill="#C9BEE6">SessionStart hook</text>
+
+  <!-- ==================== Station: clarify → code (right, skill) ==================== -->
+  <rect x="535" y="310" width="170" height="60" rx="30" fill="#2E7D5B"/>
+  <text x="620" y="336" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">clarify → code</text>
+  <text x="620" y="351" text-anchor="middle" font-size="9" fill="#D6F0E2">ask if unclear, else just write</text>
+  <text x="620" y="363" text-anchor="middle" font-size="8" fill="#BEE6CF">clarify skill</text>
+
+  <!-- ==================== Station: test (bottom, skill via Stop hook) ==================== -->
+  <rect x="345" y="500" width="170" height="60" rx="30" fill="#2E7D5B"/>
+  <text x="430" y="526" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">test</text>
+  <text x="430" y="541" text-anchor="middle" font-size="9" fill="#D6F0E2">verify-before-done gate</text>
+  <text x="430" y="553" text-anchor="middle" font-size="8" fill="#BEE6CF">test skill · via Stop hook</text>
+
+  <!-- ==================== Station: learn (left, skill via Stop hook) ==================== -->
+  <rect x="155" y="310" width="170" height="60" rx="30" fill="#2E7D5B"/>
+  <text x="240" y="336" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">learn</text>
+  <text x="240" y="351" text-anchor="middle" font-size="9" fill="#D6F0E2">capture durable learnings</text>
+  <text x="240" y="363" text-anchor="middle" font-size="8" fill="#BEE6CF">learn skill · via Stop hook</text>
+
+  <!-- ==================== LEGEND ==================== -->
+  <line x1="60" y1="610" x2="800" y2="610" stroke="#E5E7EB" stroke-width="1"/>
+  <g transform="translate(150, 630)">
+    <rect x="0" y="2" width="16" height="14" rx="7" fill="#2E7D5B"/>
+    <text x="22" y="13" font-size="11" fill="#4A5568">Skill (discover · clarify · test · learn)</text>
+
+    <rect x="320" y="2" width="16" height="14" rx="7" fill="#6B5B95"/>
+    <text x="342" y="13" font-size="11" fill="#4A5568">Hook-driven (SessionStart · Stop)</text>
+  </g>
+
+</svg>
