@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { spawnSync } from "node:child_process";
 import {
 	cpSync,
 	existsSync,
@@ -7,20 +7,22 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { spawnSync } from "node:child_process";
+import { Command } from "commander";
 import pc from "picocolors";
-import { log, logError, logSuccess, logWarn } from "../utils/log.js";
-import { getPackageRoot } from "../utils/fs.js";
 import { PLATFORMS, type Platform, setupPlatform } from "../platforms/index.js";
-import { fetchLatestVersion, isVersionOutdated } from "../utils/registry.js";
+import { LITE_PLATFORMS, setupLitePlatform } from "../platforms/lite.js";
+import { uninstallFullPlatform } from "../platforms/uninstall-full.js";
+import { getPackageRoot } from "../utils/fs.js";
+import { log, logError, logSuccess, logWarn } from "../utils/log.js";
+import { readMode, readPlatforms, writeMeta } from "../utils/meta.js";
 import {
 	type PkgManager,
 	buildInstallCommand,
 	detectPkgManager,
 } from "../utils/pkg-manager.js";
 import { confirm } from "../utils/prompt.js";
-import { readMode, readPlatforms, writeMeta } from "../utils/meta.js";
-import { setupLitePlatform } from "../platforms/lite.js";
+import { fetchLatestVersion, isVersionOutdated } from "../utils/registry.js";
+import { ensureLiteScaffolding, writeLiteManual } from "./init-lite.js";
 
 const SUPERHARNESS_DIR = ".superharness";
 const PLATFORM_MARKERS: Record<Platform, string[]> = {
@@ -61,7 +63,9 @@ async function maybeUpgradeGlobal(
 	logWarn(
 		`superharness 发布新版本啦~ 当前 ${pkg.version} → 最新 ${result.latest}`,
 	);
-	log(`将为您安装最新版本: ${pc.bold(installCmd)} (检测到包管理器: ${manager})`);
+	log(
+		`将为您安装最新版本: ${pc.bold(installCmd)} (检测到包管理器: ${manager})`,
+	);
 
 	const proceed = await confirm("是否继续？", {
 		defaultYes: true,
@@ -115,11 +119,7 @@ function refreshUsingSkill(projectDir: string, packageRoot: string): void {
 	}
 }
 
-const FORCE_TARGETS = [
-	"config.yaml",
-	"workflow.md",
-	"worktree.yaml",
-] as const;
+const FORCE_TARGETS = ["config.yaml", "workflow.md", "worktree.yaml"] as const;
 
 async function applyForceOverwrite(
 	projectDir: string,
@@ -127,7 +127,9 @@ async function applyForceOverwrite(
 	assumeYes: boolean,
 ): Promise<boolean> {
 	const shDir = join(projectDir, SUPERHARNESS_DIR);
-	const targets: string[] = FORCE_TARGETS.map((f) => `${SUPERHARNESS_DIR}/${f}`);
+	const targets: string[] = FORCE_TARGETS.map(
+		(f) => `${SUPERHARNESS_DIR}/${f}`,
+	);
 	if (existsSync(join(shDir, "spec"))) {
 		targets.push(`${SUPERHARNESS_DIR}/spec/ (重置为 blank 模板)`);
 	}
@@ -194,11 +196,79 @@ function reportSkippedUserFiles(projectDir: string): void {
 	}
 }
 
+// Switch a project from full to lite: strip full platform artifacts + settings
+// hook registrations, then run the lite install. User knowledge under
+// .superharness/ (spec, learnings, in-flight tasks) is preserved untouched.
+async function switchToLite(
+	projectDir: string,
+	packageRoot: string,
+	pkgVersion: string,
+	assumeYes: boolean,
+): Promise<void> {
+	const platforms = resolvePlatforms(projectDir);
+	const litePlatforms = platforms.filter((p) =>
+		(LITE_PLATFORMS as readonly string[]).includes(p),
+	);
+	const dropped = platforms.filter(
+		(p) => !(LITE_PLATFORMS as readonly string[]).includes(p),
+	);
+
+	console.log("");
+	logWarn("即将从 full 切换到 lite，将执行以下变更:");
+	for (const p of litePlatforms) {
+		console.log(
+			`  - ${pc.red(`移除 ${p} 的 full 产物`)} (commands/agents/.js hooks/settings 注册项)`,
+		);
+		console.log(
+			`  - ${pc.green(`安装 ${p} 的 lite 产物`)} (skills/.cjs hooks/settings 注册项)`,
+		);
+	}
+	for (const p of dropped) {
+		console.log(`  - ${pc.dim(`lite 不支持 ${p}，其目录保留但不再被接管`)}`);
+	}
+	console.log(
+		`  - ${pc.dim(".superharness/ 下的 spec/learnings/tasks 等内容保留不变")}`,
+	);
+
+	const ok = await confirm("确认切换到 lite？", {
+		defaultYes: false,
+		assumeYes,
+	});
+	if (!ok) {
+		logWarn("已取消切换");
+		process.exit(0);
+	}
+
+	console.log("");
+	for (const p of litePlatforms) {
+		uninstallFullPlatform(p, projectDir, packageRoot);
+	}
+
+	ensureLiteScaffolding(projectDir, packageRoot);
+
+	for (const p of litePlatforms) {
+		setupLitePlatform(p, projectDir, packageRoot);
+	}
+
+	writeMeta(join(projectDir, SUPERHARNESS_DIR, "config.yaml"), {
+		superharnessVersion: pkgVersion,
+		lastUpdatedAt: new Date().toISOString(),
+		mode: "lite",
+	});
+
+	console.log("");
+	logSuccess("已切换到 lite 模式!");
+	console.log("");
+}
+
 export const updateCommand = new Command("update")
-	.description("同步最新的 superharness 工具产物到当前项目（保留用户规范与配置）")
+	.description(
+		"同步最新的 superharness 工具产物到当前项目（保留用户规范与配置）",
+	)
 	.option("-f, --force", "强制覆盖 spec 与配置文件 (需二次确认)", false)
 	.option("-y, --yes", "所有交互默认 yes (CI 场景)", false)
-	.action(async (options: { force: boolean; yes: boolean }) => {
+	.option("--lite", "从 full 切换到 lite 模式 (已是 lite 则仅刷新)", false)
+	.action(async (options: { force: boolean; yes: boolean; lite: boolean }) => {
 		const projectDir = process.cwd();
 		const packageRoot = getPackageRoot();
 		const shDir = join(projectDir, SUPERHARNESS_DIR);
@@ -217,11 +287,20 @@ export const updateCommand = new Command("update")
 		await maybeUpgradeGlobal(packageRoot, pkg, options.yes);
 
 		const mode = readMode(join(shDir, "config.yaml")) ?? "full";
+
+		// --lite on a full project triggers a one-way switch; on an already-lite
+		// project it falls through to the normal lite refresh below.
+		if (options.lite && mode === "full") {
+			await switchToLite(projectDir, packageRoot, pkg.version, options.yes);
+			return;
+		}
+		if (options.lite && mode === "lite") {
+			log(pc.dim("项目已是 lite 模式，执行常规刷新"));
+		}
+
 		const platforms = resolvePlatforms(projectDir);
 		if (platforms.length === 0) {
-			logWarn(
-				`未在 config.yaml 或项目目录中检测到任何平台，跳过平台资源刷新`,
-			);
+			logWarn(`未在 config.yaml 或项目目录中检测到任何平台，跳过平台资源刷新`);
 		} else {
 			console.log("");
 			log(`将刷新平台 (${mode}): ${pc.bold(platforms.join(", "))}`);
@@ -232,6 +311,12 @@ export const updateCommand = new Command("update")
 					setupPlatform(platform, projectDir, packageRoot);
 				}
 			}
+		}
+
+		// Refresh the lite operating manual so existing lite projects pick up
+		// changes to it on update.
+		if (mode === "lite") {
+			writeLiteManual(projectDir, packageRoot);
 		}
 
 		// using-superharness injection and spec/workflow force-overwrite are

@@ -1,10 +1,61 @@
-import { existsSync, mkdirSync, cpSync, writeFileSync } from "node:fs";
+import {
+	cpSync,
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
-import { logSuccess, logWarn } from "../utils/log.js";
 import type { Platform } from "../platforms/index.js";
-import { setupLitePlatform, LITE_PLATFORMS } from "../platforms/lite.js";
+import { LITE_PLATFORMS, setupLitePlatform } from "../platforms/lite.js";
+import { logSuccess, logWarn } from "../utils/log.js";
 
 const SUPERHARNESS_DIR = ".superharness";
+
+// Lite operating manual injected by the lite SessionStart hook. Distinct from
+// full mode's using-superharness.md — lite reads a different file so a full→lite
+// switch never injects the full greenfield guide. Always refreshed from package
+// source (tool-managed, not user-edited).
+export function writeLiteManual(projectDir: string, packageRoot: string): void {
+	const src = join(
+		packageRoot,
+		"skills",
+		"using-superharness-lite",
+		"SKILL.md",
+	);
+	if (!existsSync(src)) return;
+	const dest = join(projectDir, SUPERHARNESS_DIR, "using-superharness-lite.md");
+	writeFileSync(dest, readFileSync(src, "utf-8"));
+}
+
+// Lite knowledge stores + operating manual, created only when missing so an
+// existing project's content is never clobbered. Shared by fresh `init` and the
+// full→lite switch (which must preserve the user's spec/learnings).
+export function ensureLiteScaffolding(
+	projectDir: string,
+	packageRoot: string,
+): void {
+	const shDir = join(projectDir, SUPERHARNESS_DIR);
+	mkdirSync(join(shDir, "learnings"), { recursive: true });
+	mkdirSync(join(shDir, "spec", "guides"), { recursive: true });
+
+	const indexPath = join(shDir, "learnings", "INDEX.md");
+	if (!existsSync(indexPath)) writeFileSync(indexPath, "# Learnings\n");
+
+	// Blank spec entry; discover fills the tree from real code evidence.
+	const skeletonSrc = join(
+		packageRoot,
+		"spec-templates",
+		"blank",
+		"guides",
+		"index.md",
+	);
+	const specEntry = join(shDir, "spec", "guides", "index.md");
+	if (existsSync(skeletonSrc) && !existsSync(specEntry))
+		cpSync(skeletonSrc, specEntry);
+
+	writeLiteManual(projectDir, packageRoot);
+}
 
 // Lite scaffolding: just the two knowledge stores (spec + learnings) and a
 // minimal config. No spec templates, tasks/, workspace/, workflow.md — those
@@ -33,23 +84,7 @@ export function setupLite(
 		);
 
 	const shDir = join(projectDir, SUPERHARNESS_DIR);
-	mkdirSync(join(shDir, "learnings"), { recursive: true });
-	mkdirSync(join(shDir, "spec", "guides"), { recursive: true });
-
-	const indexPath = join(shDir, "learnings", "INDEX.md");
-	if (!existsSync(indexPath)) writeFileSync(indexPath, "# Learnings\n");
-
-	// Blank spec entry; discover fills the tree from real code evidence.
-	const skeletonSrc = join(
-		packageRoot,
-		"spec-templates",
-		"blank",
-		"guides",
-		"index.md",
-	);
-	const specEntry = join(shDir, "spec", "guides", "index.md");
-	if (existsSync(skeletonSrc) && !existsSync(specEntry))
-		cpSync(skeletonSrc, specEntry);
+	ensureLiteScaffolding(projectDir, packageRoot);
 
 	const name = projectDir.split("/").pop() || "my-project";
 	const platformsBlock = effective.map((p) => `  - ${p}`).join("\n");
@@ -58,7 +93,7 @@ export function setupLite(
 		`# superharness lite\nproject:\n  name: ${name}\nplatforms:\n${platformsBlock}\n`,
 	);
 
-	logSuccess("已创建 .superharness/ (lite: learnings + spec 骨架)");
+	logSuccess("已创建 .superharness/ (lite: learnings + spec 骨架 + 操作手册)");
 
 	for (const platform of effective) {
 		setupLitePlatform(platform, projectDir, packageRoot);

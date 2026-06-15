@@ -56,6 +56,22 @@ function main() {
   if (!root) return; // not a project, stay silent
 
   const parts = [];
+
+  // Operating manual — always injected so the AI knows the project's skills and
+  // conventions. For each skill, it uses the Skill tool.
+  const manualFile = path.join(root, '.superharness', 'using-superharness-lite.md');
+  if (fs.existsSync(manualFile)) {
+    const manual = fs.readFileSync(manualFile, 'utf8').trim();
+    if (manual) {
+      parts.push(
+        '<EXTREMELY_IMPORTANT>\n'
+        + "Below is the full content of your 'using-superharness' guide — your "
+        + 'guide to using skills. For all skills, use the Skill tool:\n\n'
+        + manual + '\n</EXTREMELY_IMPORTANT>',
+      );
+    }
+  }
+
   const specEntry = path.join(root, '.superharness', 'spec', 'guides', 'index.md');
   const indexFile = path.join(root, '.superharness', 'learnings', 'INDEX.md');
   // "discover has run" means the superharness spec pointer is wired into
