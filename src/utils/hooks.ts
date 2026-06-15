@@ -10,7 +10,7 @@ export interface HookEntry {
 // Script-name fragments that identify a superharness-installed hook command,
 // across both full (.js) and lite (.cjs) modes. Used to recognize our own
 // entries for merge-skip and for removal on mode switch.
-const SUPERHARNESS_HOOK_MARKERS = [
+export const SUPERHARNESS_HOOK_MARKERS = [
 	"session-start",
 	"pre-tool-use",
 	"subagent-stop",

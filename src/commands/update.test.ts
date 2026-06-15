@@ -1,5 +1,6 @@
 import {
 	existsSync,
+	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	rmSync,
@@ -246,5 +247,63 @@ describe("update command", () => {
 		expect(settings).not.toContain("subagent-stop.js");
 		expect(settings).toContain("session-start.cjs");
 		expect(settings).toContain("stop-verify.cjs");
+	});
+
+	it("lite update prunes retired superharness skills but keeps the user's own and the sediment", async () => {
+		await runCommand(initCommand, "init", []);
+		const skillsDir = join(projectDir, ".claude", "skills");
+
+		// a superharness-known skill lite does not ship (simulates a retired/full skill)
+		mkdirSync(join(skillsDir, "go"), { recursive: true });
+		writeFileSync(join(skillsDir, "go", "SKILL.md"), "stale superharness skill");
+		// the user's own skill — must survive (not a name superharness ships)
+		mkdirSync(join(skillsDir, "my-own"), { recursive: true });
+		writeFileSync(join(skillsDir, "my-own", "SKILL.md"), "mine");
+		// a stale file inside a managed skill — clean reinstall must drop it
+		writeFileSync(join(skillsDir, "clarify", "STALE.md"), "leftover");
+		// sediment under .superharness/ — must survive
+		const learning = join(projectDir, ".superharness", "learnings", "keep.md");
+		writeFileSync(learning, "# keep");
+
+		const code = await runCommand(updateCommand, "update", []);
+		expect(code).toBe(0);
+
+		expect(existsSync(join(skillsDir, "go"))).toBe(false); // retired pruned
+		expect(existsSync(join(skillsDir, "my-own"))).toBe(true); // user kept
+		expect(existsSync(join(skillsDir, "clarify"))).toBe(true); // current present
+		expect(existsSync(join(skillsDir, "clarify", "STALE.md"))).toBe(false); // intra-skill stale gone
+		expect(readFileSync(learning, "utf-8")).toBe("# keep"); // sediment kept
+	});
+
+	it("lite update reconciles hook registrations and prunes retired hook files", async () => {
+		await runCommand(initCommand, "init", []);
+		const hooksDir = join(projectDir, ".claude", "hooks");
+		const settingsPath = join(projectDir, ".claude", "settings.json");
+
+		// a retired superharness hook file (marker match, not in the lite set)
+		writeFileSync(join(hooksDir, "subagent-stop.cjs"), "retired");
+		// the user's own hook file — matches no marker, must survive
+		writeFileSync(join(hooksDir, "my-hook.cjs"), "mine");
+
+		// tamper an existing registration to an outdated command path
+		const before = JSON.parse(readFileSync(settingsPath, "utf-8"));
+		before.hooks.SessionStart[0].hooks[0].command =
+			"node .claude/hooks/session-start.cjs --OUTDATED";
+		writeFileSync(settingsPath, JSON.stringify(before));
+
+		const code = await runCommand(updateCommand, "update", []);
+		expect(code).toBe(0);
+
+		expect(existsSync(join(hooksDir, "subagent-stop.cjs"))).toBe(false); // retired pruned
+		expect(existsSync(join(hooksDir, "my-hook.cjs"))).toBe(true); // user kept
+
+		const after = JSON.parse(readFileSync(settingsPath, "utf-8"));
+		const sessionEntries = after.hooks.SessionStart.filter(
+			(e: { hooks: Array<{ command: string }> }) =>
+				e.hooks.some((h) => h.command.includes("session-start")),
+		);
+		expect(sessionEntries).toHaveLength(1); // no duplicate registration
+		expect(JSON.stringify(after)).not.toContain("--OUTDATED"); // stale registration refreshed
+		expect(JSON.stringify(after)).toContain("session-start.cjs");
 	});
 });

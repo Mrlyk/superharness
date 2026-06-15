@@ -1,8 +1,12 @@
-import { existsSync, mkdirSync, cpSync } from "node:fs";
+import { existsSync, mkdirSync, cpSync, rmSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { logSuccess, logWarn } from "../utils/log.js";
-import { copySkillDir, copyLiteHooks } from "../utils/fs.js";
-import { mergeHookConfig } from "../utils/hooks.js";
+import { copySkillDir, copyLiteHooks, listSkillDirs } from "../utils/fs.js";
+import {
+	mergeHookConfig,
+	removeSuperharnessHooks,
+	SUPERHARNESS_HOOK_MARKERS,
+} from "../utils/hooks.js";
 
 // Lite installs the four-capability core plus the two reviewers the test
 // skill drives — never the heavy greenfield workflow skills/agents.
@@ -25,22 +29,59 @@ function copyLiteAgents(packageRoot: string, agentsDir: string): void {
 	}
 }
 
+// Reconcile lite skills in a shared skills dir so an update tracks capability
+// iteration: prune superharness skills lite no longer ships (a retired skill, or
+// full-only ones from a prior install) by known name, then clean-reinstall the
+// current set (rm-then-copy) so files dropped inside a skill don't linger. Only
+// names superharness ships are ever touched — never the user's own skills.
+function reconcileLiteSkills(packageRoot: string, skillsDir: string): void {
+	mkdirSync(skillsDir, { recursive: true });
+	const keep = new Set<string>(LITE_SKILLS);
+	for (const name of listSkillDirs(packageRoot)) {
+		if (keep.has(name)) continue;
+		rmSync(join(skillsDir, name), { recursive: true, force: true });
+	}
+	for (const name of LITE_SKILLS) {
+		rmSync(join(skillsDir, name), { recursive: true, force: true });
+		copySkillDir(packageRoot, name, skillsDir);
+	}
+}
+
+// Reconcile lite hook scripts: drop superharness-managed hook files no longer in
+// the lite set (recognized by name marker — covers retired lite hooks and stray
+// full .js), then copy the current lite hooks. The user's own hook files, which
+// match no marker, are left alone.
+function reconcileLiteHooks(packageRoot: string, hooksDir: string): number {
+	if (existsSync(hooksDir)) {
+		const keep = new Set<string>(LITE_HOOKS);
+		for (const file of readdirSync(hooksDir)) {
+			if (keep.has(file)) continue;
+			if (SUPERHARNESS_HOOK_MARKERS.some((m) => file.includes(m)))
+				rmSync(join(hooksDir, file), { force: true });
+		}
+	}
+	return copyLiteHooks(packageRoot, hooksDir, LITE_HOOKS);
+}
+
 function setupClaudeCodeLite(projectDir: string, packageRoot: string): void {
 	const claudeDir = join(projectDir, ".claude");
 	// Install as Claude Code skills (.claude/skills/) so they auto-trigger by
 	// description — not slash commands the user has to type by hand.
 	const skillsDir = join(claudeDir, "skills");
-	mkdirSync(skillsDir, { recursive: true });
-	for (const name of LITE_SKILLS) copySkillDir(packageRoot, name, skillsDir);
+	reconcileLiteSkills(packageRoot, skillsDir);
 	logSuccess(
 		`Claude Code (lite): 已安装 ${LITE_SKILLS.length} 个 skill 到 .claude/skills/`,
 	);
 
 	copyLiteAgents(packageRoot, join(claudeDir, "agents"));
 
-	const copied = copyLiteHooks(packageRoot, join(claudeDir, "hooks"), LITE_HOOKS);
+	const copied = reconcileLiteHooks(packageRoot, join(claudeDir, "hooks"));
 	if (copied > 0) logSuccess(`Claude Code (lite): 已复制 ${copied} 个 hook`);
 
+	// Reconcile hook registrations: strip our prior entries then re-add the
+	// current set, so a changed command/timeout or a newly-added hook is picked
+	// up on update (mergeHookConfig alone skips events we already registered).
+	removeSuperharnessHooks(join(claudeDir, "settings.json"));
 	mergeHookConfig(join(claudeDir, "settings.json"), {
 		SessionStart: [
 			{
@@ -76,13 +117,13 @@ function setupClaudeCodeLite(projectDir: string, packageRoot: string): void {
 
 function setupAoneCopilotLite(projectDir: string, packageRoot: string): void {
 	const aoneDir = join(projectDir, ".aone_copilot");
-	for (const name of LITE_SKILLS)
-		copySkillDir(packageRoot, name, join(aoneDir, "skills"));
+	reconcileLiteSkills(packageRoot, join(aoneDir, "skills"));
 	logSuccess(`Aone Copilot (lite): 已复制 ${LITE_SKILLS.length} 个 skill`);
 
-	const copied = copyLiteHooks(packageRoot, join(aoneDir, "hooks"), LITE_HOOKS);
+	const copied = reconcileLiteHooks(packageRoot, join(aoneDir, "hooks"));
 	if (copied > 0) logSuccess(`Aone Copilot (lite): 已复制 ${copied} 个 hook`);
 
+	removeSuperharnessHooks(join(aoneDir, "hooks.json"));
 	mergeHookConfig(
 		join(aoneDir, "hooks.json"),
 		{
@@ -121,17 +162,17 @@ function setupAoneCopilotLite(projectDir: string, packageRoot: string): void {
 
 function setupCodexLite(projectDir: string, packageRoot: string): void {
 	const codexDir = join(projectDir, ".codex");
-	for (const name of LITE_SKILLS)
-		copySkillDir(packageRoot, name, join(codexDir, "skills"));
+	reconcileLiteSkills(packageRoot, join(codexDir, "skills"));
 	logSuccess(`Codex (lite): 已复制 ${LITE_SKILLS.length} 个 skill`);
 
-	const copied = copyLiteHooks(packageRoot, join(codexDir, "hooks"), LITE_HOOKS);
+	const copied = reconcileLiteHooks(packageRoot, join(codexDir, "hooks"));
 	if (copied > 0) logSuccess(`Codex (lite): 已复制 ${copied} 个 hook`);
 
 	// Codex consumes the same hook-JSON shape (PascalCase events). The background
 	// learner runs via `codex exec`, selected by SUPERHARNESS_LEARN_CLI=codex set
 	// inline on the command. Codex does file I/O through the shell, so the verify
 	// gate's git-based churn detection still works.
+	removeSuperharnessHooks(join(codexDir, "hooks.json"));
 	mergeHookConfig(
 		join(codexDir, "hooks.json"),
 		{
