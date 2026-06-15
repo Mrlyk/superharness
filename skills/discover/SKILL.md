@@ -26,7 +26,6 @@ Spec is project conventions. Learnings (`.superharness/learnings/`) are session 
 2. `AGENTS.md` (max ~20 lines) — a one-paragraph project description, the real key commands, then exactly these pointers:
    - `Read .superharness/spec/guides/index.md before writing code; follow its links for detail.`
    - `Check .superharness/learnings/INDEX.md for past learnings; read a linked entry when relevant.`
-   - `If anything in a request is unclear, do not guess — trigger the superharness clarify skill before coding; when the request is already specific, just implement.`
    - `When all development on a task is done, run the superharness test skill once: Spec Review, Code Review, then the test suite.`
 
    If AGENTS.md exists, only append the pointer lines that are missing. Never rewrite existing user content.

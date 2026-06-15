@@ -7,14 +7,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-	afterEach,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initCommand } from "./init.js";
 import { updateCommand } from "./update.js";
 
@@ -89,7 +82,12 @@ describe("update command", () => {
 	it("preserves user spec and config files by default", async () => {
 		await runCommand(initCommand, "init", []);
 
-		const specSentinel = join(projectDir, ".superharness", "spec", "MY_SPEC.md");
+		const specSentinel = join(
+			projectDir,
+			".superharness",
+			"spec",
+			"MY_SPEC.md",
+		);
 		writeFileSync(specSentinel, "# user content");
 
 		const configPath = join(projectDir, ".superharness", "config.yaml");
@@ -106,7 +104,12 @@ describe("update command", () => {
 
 	it("--force --yes overwrites spec and config", async () => {
 		await runCommand(initCommand, "init", []);
-		const specSentinel = join(projectDir, ".superharness", "spec", "MY_SPEC.md");
+		const specSentinel = join(
+			projectDir,
+			".superharness",
+			"spec",
+			"MY_SPEC.md",
+		);
 		writeFileSync(specSentinel, "# user content");
 		const configPath = join(projectDir, ".superharness", "config.yaml");
 		writeFileSync(configPath, "# wiped\n");
@@ -149,9 +152,9 @@ describe("update command", () => {
 		]);
 		const code = await runCommand(updateCommand, "update", []);
 		expect(code).toBe(0);
-		expect(existsSync(join(projectDir, ".claude", "commands", "superharness"))).toBe(
-			true,
-		);
+		expect(
+			existsSync(join(projectDir, ".claude", "commands", "superharness")),
+		).toBe(true);
 		expect(existsSync(join(projectDir, ".cursor", "commands"))).toBe(true);
 	});
 
@@ -175,10 +178,66 @@ describe("update command", () => {
 		await runCommand(updateCommand, "update", []);
 		expect(existsSync(join(cmds, "go"))).toBe(false);
 		expect(
-			readFileSync(
-				join(projectDir, ".superharness", "config.yaml"),
-				"utf-8",
-			),
+			readFileSync(join(projectDir, ".superharness", "config.yaml"), "utf-8"),
 		).toContain('mode: "lite"');
+	});
+
+	it("--lite switches a full project to lite", async () => {
+		await runCommand(initCommand, "init", ["--full"]);
+
+		// sanity: full artifacts present
+		const commandsDir = join(projectDir, ".claude", "commands", "superharness");
+		expect(existsSync(commandsDir)).toBe(true);
+		expect(
+			existsSync(join(projectDir, ".claude", "hooks", "session-start.js")),
+		).toBe(true);
+
+		// user spec sentinel must survive the switch
+		const specSentinel = join(
+			projectDir,
+			".superharness",
+			"spec",
+			"MY_SPEC.md",
+		);
+		writeFileSync(specSentinel, "# user content");
+
+		const code = await runCommand(updateCommand, "update", ["--lite", "--yes"]);
+		expect(code).toBe(0);
+
+		// full platform artifacts removed
+		expect(existsSync(commandsDir)).toBe(false);
+		expect(
+			existsSync(join(projectDir, ".claude", "hooks", "session-start.js")),
+		).toBe(false);
+
+		// lite artifacts installed
+		const skillsDir = join(projectDir, ".claude", "skills");
+		expect(existsSync(join(skillsDir, "clarify"))).toBe(true);
+		expect(existsSync(join(skillsDir, "test"))).toBe(true);
+		expect(
+			existsSync(join(projectDir, ".claude", "hooks", "session-start.cjs")),
+		).toBe(true);
+
+		// lite manual present, user spec preserved, mode flipped
+		expect(
+			existsSync(
+				join(projectDir, ".superharness", "using-superharness-lite.md"),
+			),
+		).toBe(true);
+		expect(readFileSync(specSentinel, "utf-8")).toBe("# user content");
+		expect(
+			readFileSync(join(projectDir, ".superharness", "config.yaml"), "utf-8"),
+		).toContain('mode: "lite"');
+
+		// settings.json has no lingering full hook registrations (.js), only lite (.cjs)
+		const settings = readFileSync(
+			join(projectDir, ".claude", "settings.json"),
+			"utf-8",
+		);
+		expect(settings).not.toContain("session-start.js");
+		expect(settings).not.toContain("pre-tool-use.js");
+		expect(settings).not.toContain("subagent-stop.js");
+		expect(settings).toContain("session-start.cjs");
+		expect(settings).toContain("stop-verify.cjs");
 	});
 });
