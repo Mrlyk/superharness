@@ -13,14 +13,14 @@
  * Reference: Trellis ralph-loop.py (Python → TS rewrite)
  */
 
+import { execSync } from "node:child_process";
 import {
+	appendFileSync,
 	existsSync,
 	readFileSync,
 	writeFileSync,
-	appendFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { execSync } from "node:child_process";
 
 // ─── Types ───
 
@@ -163,10 +163,7 @@ function runVerifyCommands(
 	return { passed: true };
 }
 
-function getCompletionMarkers(
-	projectDir: string,
-	taskDir: string,
-): string[] {
+function getCompletionMarkers(projectDir: string, taskDir: string): string[] {
 	const checkJsonlPath = join(projectDir, taskDir, "check.jsonl");
 	const raw = readFileOrNull(checkJsonlPath);
 	if (!raw) return [];
@@ -193,18 +190,13 @@ function checkMarkers(
 	agentOutput: string,
 	markers: string[],
 ): { allPresent: boolean; missing: string[] } {
-	const missing = markers.filter(
-		(marker) => !agentOutput.includes(marker),
-	);
+	const missing = markers.filter((marker) => !agentOutput.includes(marker));
 	return { allPresent: missing.length === 0, missing };
 }
 
 // ─── Output builders ───
 
-function outputClaudeCode(
-	decision: "allow" | "block",
-	reason: string,
-): void {
+function outputClaudeCode(decision: "allow" | "block", reason: string): void {
 	process.stdout.write(JSON.stringify({ decision, reason }));
 }
 
@@ -283,8 +275,7 @@ function main(): void {
 	let state = loadState(projectDir);
 
 	// Reset if task changed or state too old
-	const stateAge =
-		Date.now() - new Date(state.started_at).getTime();
+	const stateAge = Date.now() - new Date(state.started_at).getTime();
 	if (state.task !== taskDir || stateAge > STATE_TIMEOUT_MS) {
 		state = {
 			task: taskDir,

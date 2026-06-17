@@ -12,13 +12,13 @@
  */
 
 import {
+	appendFileSync,
 	existsSync,
 	readFileSync,
-	writeFileSync,
 	readdirSync,
-	appendFileSync,
+	writeFileSync,
 } from "node:fs";
-import { join, resolve, dirname } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 // ─── Types ───
 
@@ -108,12 +108,16 @@ function readJsonlFileContents(
 		if (entry.type === "directory") {
 			const dirContent = readDirectoryMdFiles(fullPath);
 			if (dirContent) {
-				sections.push(`--- ${entry.file} (${entry.reason || ""}) ---\n${dirContent}`);
+				sections.push(
+					`--- ${entry.file} (${entry.reason || ""}) ---\n${dirContent}`,
+				);
 			}
 		} else {
 			const content = readFileOrNull(fullPath);
 			if (content) {
-				sections.push(`--- ${entry.file} (${entry.reason || ""}) ---\n${content}`);
+				sections.push(
+					`--- ${entry.file} (${entry.reason || ""}) ---\n${content}`,
+				);
 			}
 		}
 	}
@@ -130,7 +134,11 @@ function getCurrentTask(projectDir: string): string | null {
 	return readFileOrNull(currentTaskFile)?.trim() || null;
 }
 
-function updatePhase(projectDir: string, taskDir: string, agentType: string): void {
+function updatePhase(
+	projectDir: string,
+	taskDir: string,
+	agentType: string,
+): void {
 	const taskJsonPath = join(projectDir, taskDir, "task.json");
 	const raw = readFileOrNull(taskJsonPath);
 	if (!raw) return;
@@ -179,10 +187,7 @@ function writeTrace(
 
 // ─── Context builders ───
 
-function buildImplementContext(
-	projectDir: string,
-	taskDir: string,
-): string {
+function buildImplementContext(projectDir: string, taskDir: string): string {
 	const taskDirFull = join(projectDir, taskDir);
 	// Read implement.jsonl, fallback to spec.jsonl
 	let entries = readJsonlEntries(join(taskDirFull, "implement.jsonl"));
@@ -202,10 +207,7 @@ function buildImplementContext(
 	return sections.filter(Boolean).join("\n\n");
 }
 
-function buildCheckContext(
-	projectDir: string,
-	taskDir: string,
-): string {
+function buildCheckContext(projectDir: string, taskDir: string): string {
 	const taskDirFull = join(projectDir, taskDir);
 	let entries = readJsonlEntries(join(taskDirFull, "check.jsonl"));
 	if (entries.length === 0) {
@@ -223,10 +225,7 @@ function buildCheckContext(
 	return sections.filter(Boolean).join("\n\n");
 }
 
-function buildDebugContext(
-	projectDir: string,
-	taskDir: string,
-): string {
+function buildDebugContext(projectDir: string, taskDir: string): string {
 	const taskDirFull = join(projectDir, taskDir);
 	let entries = readJsonlEntries(join(taskDirFull, "debug.jsonl"));
 	if (entries.length === 0) {

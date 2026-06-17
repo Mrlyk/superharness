@@ -247,7 +247,11 @@ async function switchToLite(
 	// Full mode's operating manual is .superharness/using-superharness.md; lite
 	// reads using-superharness-lite.md instead. The full manual is tool-managed
 	// (not user content), so drop it on switch or both guides linger side by side.
-	const fullManual = join(projectDir, SUPERHARNESS_DIR, "using-superharness.md");
+	const fullManual = join(
+		projectDir,
+		SUPERHARNESS_DIR,
+		"using-superharness.md",
+	);
 	if (existsSync(fullManual)) {
 		rmSync(fullManual, { force: true });
 		logSuccess("已移除 full 操作手册 .superharness/using-superharness.md");

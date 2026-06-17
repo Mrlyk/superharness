@@ -55,9 +55,13 @@ function buildContext(projectDir: string): string {
 	const sections: string[] = [];
 
 	// 1. Using-superharness skill (replaces workflow.md as the primary session context)
-	const usingSuperharness = readFileOrNull(join(shDir, "using-superharness.md"));
+	const usingSuperharness = readFileOrNull(
+		join(shDir, "using-superharness.md"),
+	);
 	if (usingSuperharness) {
-		sections.push(`<EXTREMELY_IMPORTANT>\nYou have superharness.\n\nBelow is the full content of your 'using-superharness' skill — your guide to using skills. For all other skills, use the Skill tool:\n\n${usingSuperharness}\n</EXTREMELY_IMPORTANT>`);
+		sections.push(
+			`<EXTREMELY_IMPORTANT>\nYou have superharness.\n\nBelow is the full content of your 'using-superharness' skill — your guide to using skills. For all other skills, use the Skill tool:\n\n${usingSuperharness}\n</EXTREMELY_IMPORTANT>`,
+		);
 	}
 
 	// 2. Spec guidelines (index.md files only)
@@ -69,9 +73,7 @@ function buildContext(projectDir: string): string {
 				.map((f) => {
 					const relativePath = f.replace(`${shDir}/`, "");
 					const content = readFileOrNull(f);
-					return content
-						? `### ${relativePath}\n${content}`
-						: null;
+					return content ? `### ${relativePath}\n${content}` : null;
 				})
 				.filter(Boolean)
 				.join("\n\n");
@@ -114,9 +116,7 @@ function buildContext(projectDir: string): string {
 						`<task-status>\n` +
 							`Unfinished task detected: ${task.title || task.name || currentTask}\n` +
 							`Status: ${task.status}\n` +
-							[phaseInfo, sprintInfo, worktreeInfo]
-								.filter(Boolean)
-								.join("\n") +
+							[phaseInfo, sprintInfo, worktreeInfo].filter(Boolean).join("\n") +
 							`\n\nTask directory: ${currentTask}\n` +
 							`</task-status>`,
 					);

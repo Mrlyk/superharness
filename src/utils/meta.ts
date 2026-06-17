@@ -46,7 +46,12 @@ export function readPlatforms(configPath: string): string[] | null {
 		.split("\n")
 		.map((line) => line.trim())
 		.filter((line) => line.startsWith("-"))
-		.map((line) => line.slice(1).trim().replace(/^["']|["']$/g, ""))
+		.map((line) =>
+			line
+				.slice(1)
+				.trim()
+				.replace(/^["']|["']$/g, ""),
+		)
 		.filter(Boolean);
 	return items.length ? items : null;
 }

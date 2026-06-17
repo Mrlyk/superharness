@@ -1,13 +1,13 @@
 import {
+	cpSync,
 	existsSync,
 	mkdirSync,
-	cpSync,
-	writeFileSync,
 	readFileSync,
 	readdirSync,
 	statSync,
+	writeFileSync,
 } from "node:fs";
-import { join, resolve, dirname } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export function getPackageRoot(): string {
@@ -28,8 +28,7 @@ export function listSkillDirs(packageRoot: string): string[] {
 	return readdirSync(skillsDir).filter((name) => {
 		const fullPath = join(skillsDir, name);
 		return (
-			statSync(fullPath).isDirectory() &&
-			existsSync(join(fullPath, "SKILL.md"))
+			statSync(fullPath).isDirectory() && existsSync(join(fullPath, "SKILL.md"))
 		);
 	});
 }
@@ -70,11 +69,7 @@ export function copyHookScripts(
 	packageRoot: string,
 	destHooksDir: string,
 ): number {
-	const hookFiles = [
-		"session-start.js",
-		"pre-tool-use.js",
-		"subagent-stop.js",
-	];
+	const hookFiles = ["session-start.js", "pre-tool-use.js", "subagent-stop.js"];
 	mkdirSync(destHooksDir, { recursive: true });
 	let copied = 0;
 	for (const hookFile of hookFiles) {

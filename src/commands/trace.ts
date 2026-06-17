@@ -1,8 +1,8 @@
-import { Command } from "commander";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { Command } from "commander";
 import pc from "picocolors";
-import { log, logWarn, logError } from "../utils/log.js";
+import { log, logError, logWarn } from "../utils/log.js";
 
 interface TraceEvent {
 	ts: string;
@@ -90,9 +90,7 @@ function buildPathSummary(events: TraceEvent[]): string {
 	}
 
 	if (ralphCount > 1) {
-		anomalies.push(
-			`- check 阶段 Ralph Loop 执行了 ${ralphCount} 次`,
-		);
+		anomalies.push(`- check 阶段 Ralph Loop 执行了 ${ralphCount} 次`);
 	}
 
 	const actualPath = phases.join(" → ") || "(无事件记录)";
@@ -118,54 +116,48 @@ export const traceCommand = new Command("trace")
 	.option("--task <dir>", "指定任务目录")
 	.option("--diff <tasks...>", "对比两个任务的路径差异")
 	.option("--raw", "显示原始事件列表")
-	.action(
-		(options: { task?: string; diff?: string[]; raw?: boolean }) => {
-			if (options.diff && options.diff.length >= 2) {
-				// Diff mode
-				const dir1 = findTaskDir(options.diff[0]);
-				const dir2 = findTaskDir(options.diff[1]);
-				if (!dir1 || !dir2) {
-					logError("无法找到指定的任务目录");
-					process.exit(1);
-				}
-				const events1 = readTraceEvents(join(dir1, "trace.jsonl"));
-				const events2 = readTraceEvents(join(dir2, "trace.jsonl"));
-				console.log(
-					`\n${pc.bold("任务 1:")} ${options.diff[0]}`,
-				);
-				console.log(buildPathSummary(events1));
-				console.log(
-					`\n${pc.bold("任务 2:")} ${options.diff[1]}`,
-				);
-				console.log(buildPathSummary(events2));
-				return;
+	.action((options: { task?: string; diff?: string[]; raw?: boolean }) => {
+		if (options.diff && options.diff.length >= 2) {
+			// Diff mode
+			const dir1 = findTaskDir(options.diff[0]);
+			const dir2 = findTaskDir(options.diff[1]);
+			if (!dir1 || !dir2) {
+				logError("无法找到指定的任务目录");
+				process.exit(1);
 			}
+			const events1 = readTraceEvents(join(dir1, "trace.jsonl"));
+			const events2 = readTraceEvents(join(dir2, "trace.jsonl"));
+			console.log(`\n${pc.bold("任务 1:")} ${options.diff[0]}`);
+			console.log(buildPathSummary(events1));
+			console.log(`\n${pc.bold("任务 2:")} ${options.diff[1]}`);
+			console.log(buildPathSummary(events2));
+			return;
+		}
 
-			const taskDir = findTaskDir(options.task);
-			if (!taskDir) {
-				logWarn("未找到包含 trace.jsonl 的任务目录");
-				log(
-					"使用 --task <dir> 指定任务目录，或确保 .superharness/tasks/.current-task 指向有效任务",
-				);
-				return;
+		const taskDir = findTaskDir(options.task);
+		if (!taskDir) {
+			logWarn("未找到包含 trace.jsonl 的任务目录");
+			log(
+				"使用 --task <dir> 指定任务目录，或确保 .superharness/tasks/.current-task 指向有效任务",
+			);
+			return;
+		}
+
+		const events = readTraceEvents(join(taskDir, "trace.jsonl"));
+		if (events.length === 0) {
+			logWarn("trace.jsonl 为空");
+			return;
+		}
+
+		const taskName = taskDir.split("/").pop() || taskDir;
+		console.log(`\n${pc.bold(`执行路径 - ${taskName}`)}\n`);
+
+		if (options.raw) {
+			for (const event of events) {
+				console.log(formatEvent(event));
 			}
-
-			const events = readTraceEvents(join(taskDir, "trace.jsonl"));
-			if (events.length === 0) {
-				logWarn("trace.jsonl 为空");
-				return;
-			}
-
-			const taskName = taskDir.split("/").pop() || taskDir;
-			console.log(`\n${pc.bold(`执行路径 - ${taskName}`)}\n`);
-
-			if (options.raw) {
-				for (const event of events) {
-					console.log(formatEvent(event));
-				}
-			} else {
-				console.log(buildPathSummary(events));
-			}
-			console.log("");
-		},
-	);
+		} else {
+			console.log(buildPathSummary(events));
+		}
+		console.log("");
+	});
