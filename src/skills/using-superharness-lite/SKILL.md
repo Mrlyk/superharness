@@ -29,10 +29,10 @@ These skills auto-trigger by their description — invoke them via the Skill too
 
 | Skill | When to Use |
 |-------|-------------|
-| `clarify` | Starting a non-trivial dev task whose requirements leave open questions (scope, data shape, UX, compatibility) that would change the implementation — resolve them BEFORE coding. |
-| `discover` | The project lacks AGENTS.md/CLAUDE.md, or the spec is stale — scan the codebase from real evidence and write the project spec. |
-| `learn` | Persist durable learnings (user corrections, pitfalls and fixes, decisions not visible in code) into the project knowledge wiki. |
-| `test` | After ALL development on a task is complete — one terminal pass: Spec Review → Code Review → test suite. Not per change. |
+| `sh-clarify` | Starting a non-trivial dev task whose requirements leave open questions (scope, data shape, UX, compatibility) that would change the implementation — resolve them BEFORE coding. |
+| `sh-discover` | The project lacks AGENTS.md/CLAUDE.md, or the spec is stale — scan the codebase from real evidence and write the project spec. |
+| `sh-learn` | Persist durable learnings (user corrections, pitfalls and fixes, decisions not visible in code) into the project knowledge wiki. |
+| `sh-test` | After ALL development on a task is complete — one terminal pass: Spec Review → Code Review → test suite. Not per change. |
 
 ## The Rule
 
@@ -42,19 +42,19 @@ These skills auto-trigger by their description — invoke them via the Skill too
 
 When multiple skills could apply, use this order:
 
-1. **Up front** — `clarify` resolves undecided requirements before any code is written.
-2. **Project understanding** — `discover` establishes the spec when the project has none or it has drifted.
-3. **On completion** — `test` is the terminal gate after all development is done.
-4. **End of session** — `learn` captures anything durable worth remembering.
+1. **Up front** — `sh-clarify` resolves undecided requirements before any code is written.
+2. **Project understanding** — `sh-discover` establishes the spec when the project has none or it has drifted.
+3. **On completion** — `sh-test` is the terminal gate after all development is done.
+4. **End of session** — `sh-learn` captures anything durable worth remembering.
 
 "Let's build X" → clarify undecided requirements first, then implement.
 "Fix this bug" → investigate root cause first, then fix, then the terminal test pass.
 
 ## Skill Types
 
-**Rigid** (test, verification): Follow exactly. Don't adapt away discipline.
+**Rigid** (sh-test, verification): Follow exactly. Don't adapt away discipline.
 
-**Flexible** (clarify, discover): Adapt principles to context.
+**Flexible** (sh-clarify, sh-discover): Adapt principles to context.
 
 The skill itself tells you which.
 
@@ -67,7 +67,7 @@ These thoughts mean STOP — you're rationalizing:
 | "This is just a simple question" | Questions are tasks. Check for skills. |
 | "I'll clarify after I start coding" | Clarification comes BEFORE implementation, not after. |
 | "Tests can wait" | Finishing a task means a clean terminal review-and-test pass. |
-| "Nothing worth learning here" | Maybe — but let `learn` decide; don't skip the check. |
+| "Nothing worth learning here" | Maybe — but let `sh-learn` decide; don't skip the check. |
 | "I already know this skill" | Skills evolve. Read the current version. |
 
 ## User Instructions
@@ -76,10 +76,10 @@ Instructions say WHAT, not HOW. "Add X" or "Fix Y" doesn't mean skip the workflo
 
 ## Project Conventions
 
-Project-specific conventions live as a spec, with AGENTS.md + CLAUDE.md as the thin always-loaded entry and detail under `.superharness/spec/` (read on demand). The `discover` skill generates and refreshes them from real evidence in the codebase.
+Project-specific conventions live as a spec, with AGENTS.md + CLAUDE.md as the thin always-loaded entry and detail under `.superharness/spec/` (read on demand). The `sh-discover` skill generates and refreshes them from real evidence in the codebase.
 
 Read the relevant spec files before starting work on any task.
 
 ## Durable Knowledge
 
-Learnings accumulate in `.superharness/learnings/`, organized as a topic wiki. `INDEX.md` is the catalog and the only file loaded into future sessions. Read a linked learning file before relying on it; persist new ones with the `learn` skill.
+Learnings accumulate in `.superharness/learnings/`, organized as a topic wiki. `INDEX.md` is the catalog and the only file loaded into future sessions. Read a linked learning file before relying on it; persist new ones with the `sh-learn` skill.

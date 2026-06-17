@@ -10,14 +10,15 @@
 
 <p align="center">
   <a href="./README.md">English</a> &bull;
+  <a href="#基准测试">基准测试</a> &bull;
   <a href="#快速开始">快速开始</a> &bull;
-  <a href="#多平台支持">多平台支持</a> &bull;
-  <a href="#致谢与差异">致谢与差异</a>
+  <a href="#lite-模式">Lite 模式</a> &bull;
+  <a href="#多平台支持">多平台支持</a>
 </p>
 
 <p align="center">
 <sub>驾驭你的 AI 编码工具 &mdash; 与工具无关的软件工程工作流引擎</sub><br />
-  <sub>支持 Claude Code、Cursor、Codex、Qoder、Aone Copilot、Gemini CLI、GitHub Copilot</sub>
+  <sub>支持 Claude Code、Codex、Qoder、GitHub Copilot</sub>
 </p>
 
 ## 概述
@@ -26,82 +27,54 @@ Superharness 不是又一个 AI 编码工具，而是**注入到 AI 工具中的
 
 AI 编码工具很强大，但没有约束的强大是危险的：跳过测试、偏离需求、写出能跑但不可维护的代码、"完成"了但没人验证过。Superharness 把开发纪律变成机械强制的工作流，而不是靠 AI 自觉遵守的建议。
 
-## Lite 模式（0.9.0 起为默认）
+它在 `init` 时分**两种模式**：**lite**（默认）面向存量项目维护——一个常驻的精简套件，四个会复利的能力；**full**（`--full`）面向新项目——完整的端到端工作流。
 
-随着模型能力增强，下面那套从头到尾的完整工作流对**存量项目维护**偏重。`superharness init` 现在默认安装 **lite** 精简版——只保留随模型增强仍持续增值的四个能力：
+## 基准测试
 
-- **learn** —— 会话中的纠正、踩坑、决策自动沉淀到 `.superharness/learnings/`，并注入后续会话。自学习是核心。
-- **discover** —— 扫一遍代码库生成最小项目规范：`AGENTS.md` + `CLAUDE.md` 作每会话只加载的薄入口，详细规范放 `.superharness/spec/`。
-- **clarify** —— 需求真正未定时先问再写；已经清楚就别挡路。
-- **test** —— 「收工前先跑一遍」的终检门控：逼模型在声明完成前用文档示例 + 对抗性边界用例跑过自己的代码；另有显式的 Spec + Code Review 双规范检查技能，整个任务完成后跑一次。
+同任务、同模型（Sonnet）的 A/B 对照，确定性程序评分。完整方法学与分项检查表见 [docs/benchmark-lite.md](docs/benchmark-lite.md)。
 
-没有强制工作流，没有 `tasks/` / `worktree` 脚手架。自学习和终检门控经钩子自动运行。`superharness init --full` 安装下面**工作流程**里的完整 greenfield 工作流。
+| 场景 | 基线（裸模型） | + superharness lite | Δ |
+|------|--------------|---------------------|---|
+| 自动学习·召回 | 56% | 100% | **+44pp** |
+| 自动学习·精度（wiki） | 29% | 100% | **+71pp** |
+| 跨会话记忆 | 20% | 100% | **+80pp** |
+| 需求澄清 | 0% | 33% | **+33pp** |
+| 澄清·自触发 | 0% | 67% | **+67pp** |
+| 收尾测试 | 40% | 53% | **+13pp** |
+| 规范遵循 | 100% | 100% | 持平 |
+| HumanEval+ 困难子集 | 30% | 57% | **+27pp** |
+| 控制组·HumanEval/0–9 | 100% | 100% | 无回归 |
 
-### 基准（北极星）
-
-在 **HumanEval+ hard 子集**（baseline Sonnet 失败的 11 题）上 A/B，`claude -p`，每臂 16 trials：
-
-| 臂 | pass@1 |
-|----|--------|
-| 裸模型 baseline | 35% (61/176) |
-| + superharness lite | **39% (68/176)** &nbsp; **+4pp** |
-
-提升来自终检门控：lite 逼模型在收工前用边界用例真正跑一遍解答，抓住单次生成漏掉的 bug——有一题 baseline 从未解出，lite 通过 5/16。产出该结果的优循环还**拦住了一个有害的早期默认**（每次改动都做重 review，把通过的代码*过度改坏*，−11pp）并纠正了它。复现：`tests/bench/heval-lite.sh --plus`。
-
-## 工作流程（`--full`）
-
-<p align="center">
-  <img src="docs/images/superharness-workflow.svg" alt="Superharness 工作流全景" width="100%" />
-</p>
-
-```
-/superharness:go "做一个旅行规划 app"
-
-  1. 头脑风暴 ── 逐个问题澄清需求，提出 2-3 种方案，用户确认设计
-     （首次运行时自动扫描项目代码，生成基础规范到 .superharness/spec/）
-  2. 任务拆解 ── 生成 bite-sized 任务（每个 2-5 分钟），完整代码，精确路径
-  3. 隔离开发 ── 自动创建 git worktree，在独立分支上工作
-  4. TDD 实现 ── 每个任务：写失败测试 → 写实现 → 测试通过 → 提交
-  5. 双阶段审查 ── spec 合规审查 → 代码质量审查，不通过不往下走
-  6. QA 验收 ── 调用外部 QA 服务（可选），发现问题自动修复
-  7. 合并完成 ── 验证通过后合并 worktree，输出总结
-```
-
-整个过程由 AI 工具自主执行，你只需要在头脑风暴阶段参与决策。
-
-**小改动不需要走这个流程。** Session-start hook 在每次 AI 会话启动时自动将项目规范和调度协议注入到上下文，AI 工具在任何对话中都会遵循这些规范。修一个 bug、调一个配置、改几行代码——直接说，不需要输入任何 superharness 命令。
 
 ## 快速开始
 
 ```bash
-# 1. 安装
 npm install -g superharness
+```
 
-# 2a. Lite（默认）—— 存量项目维护的精简套件
+**Lite（默认）** —— 存量项目维护，只装 `sh-discover` / `sh-clarify` / `sh-test` / `sh-learn`：
+
+```bash
 superharness init
+```
 
-# 2b. Full —— 完整 greenfield 工作流
+装好后正常写代码即可：让 AI 跑一次 `sh-discover` 扫代码库生成规范；之后 sh-clarify / sh-test / sh-learn 由 hook 自动触发，无需任何命令。
+
+**Full（`--full`）** —— 新项目的完整端到端工作流：
+
+```bash
 superharness init --full --platforms claude-code --template frontend
-
-# 3. 使用
-#   Lite：让 AI 扫描代码库生成规范（discover 技能自动触发），然后正常写代码；
-#         clarify / test / learn 技能按需自动触发，自学习 + 终检门控自动运行。
-#   Full：
 /superharness:go "你的需求描述或需求链接"
 ```
 
 > [!IMPORTANT]
-> **更新工具请用 `superharness update`，不要重新跑 `init`。**
+> **更新工具请用 `superharness update`，不要重新跑 `init`。** 它刷新已安装的 skill/agent/hook，保留你的项目内容；命令开头会查 registry，全局包落后时提示升级并自动检测包管理器（npm/pnpm/yarn/bun）升级后 re-exec 继续。
 >
-> 升级全局包后，在项目目录执行：
+> - **lite**：对账式重装——刷新当前 skill/hook、清掉已下线的、刷新 hook 注册；`.superharness/spec/` 与 `learnings/` 沉淀原样保留。
+> - **full**：刷新 skill/agent/hook，保留 `.superharness/spec/`、`config.yaml`、`workflow.md`、`worktree.yaml`；`--force` 重置 spec 与配置（需二次确认）。
+> - **从 full 切到 lite**：`superharness update --lite`（精确移除 full 产物，保留 `.superharness/` 沉淀）。
 >
-> ```bash
-> superharness update
-> ```
->
-> 它会刷新 skills / agents / hooks / 平台 settings，**但保留** `.superharness/spec/`、`config.yaml`、`workflow.md`、`worktree.yaml` 等你已经定制的内容（避免覆盖 `spec-discover` 产物）。命令开头还会查询 npm registry，如果发现全局包落后，会提示你升级并自动检测包管理器（npm/pnpm/yarn/bun）执行升级，升级完自动 re-exec 新版本继续 update。
->
-> 重置项目用 `superharness update --force`（覆盖 spec 与三个配置文件，需二次确认）；重新初始化用 `superharness init --force`。`-y` 跳过所有交互（CI 场景）。
+> `-y` 跳过所有交互（CI 场景）；重新初始化用 `superharness init --force`。
 
 <details>
 <summary><strong>参数说明</strong></summary>
@@ -122,7 +95,48 @@ superharness init --full --platforms claude-code --template frontend
 
 </details>
 
-## 核心能力
+## Lite 模式
+
+**Less is more。** lite 只装四个会复利的能力——记忆（`sh-learn`）、规范（`sh-discover`）、澄清（`sh-clarify`）、收尾测试（`sh-test`），其余一概不装。
+
+<p align="center">
+  <img src="docs/images/superharness-lite-workflow.svg" alt="Superharness Lite · 一个自我增强的闭环" width="100%" />
+</p>
+
+- **sh-discover** —— 扫一遍代码库生成最小项目规范：`AGENTS.md` + `CLAUDE.md` 作每会话只加载的薄入口，详细规范放 `.superharness/spec/`。
+- **sh-clarify** —— 需求真正模糊时自动触发、先问再写；请求已经清晰时不挡路。
+- **sh-test** —— 「收工前先跑一遍」的终检门控：逼模型在声明完成前用文档示例 + 对抗性边界用例跑过自己的代码；另有显式的 Spec + Code Review 双规范检查技能，整个任务完成后跑一次。
+- **sh-learn** —— 会话中的纠正、踩坑、决策自动沉淀到 `.superharness/learnings/`，并注入后续会话。
+
+每个能力都是一个 skill：session-start hook 在会话开头注入项目规范 + 过往沉淀，stop hook 在回合结束跑终检门控和后台学习。
+
+## Full 模式
+
+`superharness init --full` 安装完整端到端工作流：**头脑风暴 → 任务拆解 → 隔离开发（worktree）→ TDD → 双阶段审查 → QA → 合并**，由 `/superharness:go` 驱动。
+
+<p align="center">
+  <img src="docs/images/superharness-workflow.svg" alt="Superharness 工作流全景" width="100%" />
+</p>
+
+<details>
+<summary><strong>七步详情</strong></summary>
+
+```
+/superharness:go "做一个旅行规划 app"
+
+  1. 头脑风暴 ── 逐个问题澄清需求，提出 2-3 种方案，用户确认设计
+     （首次运行时自动扫描项目代码，生成基础规范到 .superharness/spec/）
+  2. 任务拆解 ── 生成 bite-sized 任务（每个 2-5 分钟），完整代码，精确路径
+  3. 隔离开发 ── 自动创建 git worktree，在独立分支上工作
+  4. TDD 实现 ── 每个任务：写失败测试 → 写实现 → 测试通过 → 提交
+  5. 双阶段审查 ── spec 合规审查 → 代码质量审查，不通过不往下走
+  6. QA 验收 ── 调用外部 QA 服务（可选），发现问题自动修复
+  7. 合并完成 ── 验证通过后合并 worktree，输出总结
+```
+
+整个过程由 AI 工具自主执行，你只需要在头脑风暴阶段参与决策。小改动连这个都不需要——session-start hook 每次会话自动注入项目规范，修 bug、调配置就是普通对话，不用输入任何 superharness 命令。
+
+</details>
 
 ### 三条铁律
 
@@ -245,7 +259,20 @@ superharness trace --diff task1 task2                          # 对比两个 ta
 
 ## 项目结构
 
-`superharness init` 在用户项目中创建 `.superharness/` 目录：
+lite 模式下 `superharness init` 创建一个精简的 `.superharness/`：
+
+```
+.superharness/
+├── config.yaml                       # 项目配置（模式、平台）
+├── using-superharness-lite.md        # lite 操作手册（SessionStart hook 注入）
+├── learnings/                        # 自学习沉淀
+│   └── INDEX.md
+└── spec/                             # 项目规范（sh-discover 生成，hook 注入入口）
+    └── guides/index.md
+```
+
+<details>
+<summary><strong>Full 模式的目录结构</strong></summary>
 
 ```
 .superharness/
@@ -269,11 +296,20 @@ superharness trace --diff task1 task2                          # 对比两个 ta
 └── .gitignore                        # 排除运行时状态
 ```
 
+</details>
+
 ## Skill 一览
+
+lite 默认只安装 `sh-discover` / `sh-clarify` / `sh-test` / `sh-learn` 这一组；full 安装下表全部。
 
 | 分类 | Skill | 用途 |
 |------|-------|------|
-| 工作流 | `go` | 主入口：端到端工作流编排 |
+| Lite（默认）| `sh-discover` | 扫描代码库生成精简项目规范：`AGENTS.md`/`CLAUDE.md` 薄入口 + `.superharness/spec/` |
+| | `sh-clarify` | 需求模糊时自动追问、先问再写；清晰时不挡路 |
+| | `sh-test` | 「收工前先跑一遍」终检门控 + Spec/Code 双规范审查 |
+| | `sh-learn` | 会话经验沉淀到 `.superharness/learnings/`，自动注入后续会话 |
+| | `using-superharness-lite` | lite 会话操作手册（SessionStart hook 注入） |
+| Full 工作流 | `go` | 主入口：端到端工作流编排 |
 | | `brainstorm` | 需求澄清 + Spec 自动发现 + 思维导图 |
 | | `writing-plans` | 任务拆解：bite-sized 任务、完整代码 |
 | | `subagent-driven-development` | 每任务新鲜 subagent + 双阶段审查 |
@@ -291,6 +327,8 @@ superharness trace --diff task1 task2                          # 对比两个 ta
 
 ## Agent 一览
 
+lite 只装 `spec-reviewer` + `code-reviewer`；下面四个（`implement` / `check` / `debug` / `research`）是 full 专属。
+
 | Agent | 用途 | 调度方式 |
 |-------|------|---------|
 | `implement` | 实现任务，遵循 TDD | `Task(subagent_type: "implement")` |
@@ -304,7 +342,8 @@ superharness trace --diff task1 task2                          # 对比两个 ta
 
 | 命令 | 用途 |
 |------|------|
-| `superharness init` | 初始化项目 + 复制 skill/agent/hook 到各平台目录 |
+| `superharness init` | 初始化——默认 **lite**；`--full` 安装完整 greenfield 工作流。参数：`--platforms <a,b>`、`--template <name>`（full）、`--force` |
+| `superharness update` | 刷新 skill/agent/hook，**保留** `.superharness/spec/` 与 `learnings/`。`--lite` 将 full 项目迁移到 lite；`--force` 重置配置；`-y` 跳过交互 |
 | `superharness sync` | spec/skill 变更后重新同步到各平台 |
 | `superharness spec add` | 追加规范模板（monorepo） |
 | `superharness task list` | 查看任务进度 |
@@ -319,11 +358,8 @@ superharness trace --diff task1 task2                          # 对比两个 ta
 | 平台 | Skill 目录 | Agent 目录 | Hook 支持 |
 |------|-----------|-----------|----------|
 | Claude Code | `.claude/commands/superharness/` | `.claude/agents/` | SessionStart + PreToolUse + SubagentStop |
-| Cursor | `.cursor/commands/` | `.cursor/agents/` | sessionStart + preToolUse + subagentStop |
-| Aone Copilot | `.aone_copilot/skills/` | — | sessionStart + preToolUse + stop |
 | Codex | `.codex/skills/` | — | — |
 | Qoder | `.qoder/skills/` | — | — |
-| Gemini CLI | `.gemini/commands/` (Phase 4) | — | BeforeTool + AfterResponse |
 | GitHub Copilot | `~/.copilot/skills/` | — | 待确认 |
 
 ## 致谢与差异

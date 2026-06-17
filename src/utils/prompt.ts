@@ -1,5 +1,5 @@
-import { createInterface } from "node:readline";
 import { stdin, stdout } from "node:process";
+import { createInterface } from "node:readline";
 
 export interface ConfirmOptions {
 	defaultYes?: boolean;

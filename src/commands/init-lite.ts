@@ -19,6 +19,7 @@ const SUPERHARNESS_DIR = ".superharness";
 export function writeLiteManual(projectDir: string, packageRoot: string): void {
 	const src = join(
 		packageRoot,
+		"dist",
 		"skills",
 		"using-superharness-lite",
 		"SKILL.md",
@@ -42,9 +43,10 @@ export function ensureLiteScaffolding(
 	const indexPath = join(shDir, "learnings", "INDEX.md");
 	if (!existsSync(indexPath)) writeFileSync(indexPath, "# Learnings\n");
 
-	// Blank spec entry; discover fills the tree from real code evidence.
+	// Blank spec entry; sh-discover fills the tree from real code evidence.
 	const skeletonSrc = join(
 		packageRoot,
+		"dist",
 		"spec-templates",
 		"blank",
 		"guides",
@@ -80,7 +82,7 @@ export function setupLite(
 	);
 	if (effective.length === 0)
 		logWarn(
-			"lite 仅支持 claude-code / codex / aone-copilot；本次没有可安装的平台适配",
+			"lite 仅支持 claude-code / codex / qoder / aone-copilot；本次没有可安装的平台适配",
 		);
 
 	const shDir = join(projectDir, SUPERHARNESS_DIR);

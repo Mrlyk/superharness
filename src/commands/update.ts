@@ -111,7 +111,7 @@ function resolvePlatforms(projectDir: string): Platform[] {
 }
 
 function refreshUsingSkill(projectDir: string, packageRoot: string): void {
-	const src = join(packageRoot, "skills", "using-superharness", "SKILL.md");
+	const src = join(packageRoot, "dist", "skills", "using-superharness", "SKILL.md");
 	const dest = join(projectDir, SUPERHARNESS_DIR, "using-superharness.md");
 	if (existsSync(src)) {
 		writeFileSync(dest, readFileSync(src, "utf-8"));
@@ -144,7 +144,7 @@ async function applyForceOverwrite(
 		return false;
 	}
 
-	const templatesDir = join(packageRoot, "templates");
+	const templatesDir = join(packageRoot, "dist", "templates");
 	for (const file of FORCE_TARGETS) {
 		const src = join(templatesDir, `${file}.hbs`);
 		if (!existsSync(src)) continue;
@@ -165,7 +165,7 @@ async function applyForceOverwrite(
 		logSuccess(`已覆盖 ${SUPERHARNESS_DIR}/${file}`);
 	}
 
-	const blankSpec = join(packageRoot, "spec-templates", "blank");
+	const blankSpec = join(packageRoot, "dist", "spec-templates", "blank");
 	const specDest = join(shDir, "spec");
 	if (existsSync(blankSpec)) {
 		if (existsSync(specDest)) {
@@ -242,6 +242,19 @@ async function switchToLite(
 	console.log("");
 	for (const p of litePlatforms) {
 		uninstallFullPlatform(p, projectDir, packageRoot);
+	}
+
+	// Full mode's operating manual is .superharness/using-superharness.md; lite
+	// reads using-superharness-lite.md instead. The full manual is tool-managed
+	// (not user content), so drop it on switch or both guides linger side by side.
+	const fullManual = join(
+		projectDir,
+		SUPERHARNESS_DIR,
+		"using-superharness.md",
+	);
+	if (existsSync(fullManual)) {
+		rmSync(fullManual, { force: true });
+		logSuccess("已移除 full 操作手册 .superharness/using-superharness.md");
 	}
 
 	ensureLiteScaffolding(projectDir, packageRoot);

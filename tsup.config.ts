@@ -1,28 +1,31 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig([
-  {
-    entry: { index: "src/index.ts" },
-    format: ["esm"],
-    target: "node20",
-    outDir: "dist",
-    clean: true,
-    splitting: false,
-    sourcemap: true,
-    dts: false,
-    banner: { js: "#!/usr/bin/env node" },
-  },
-  {
-    entry: {
-      "hooks/session-start": "src/hooks/session-start.ts",
-      "hooks/pre-tool-use": "src/hooks/pre-tool-use.ts",
-      "hooks/subagent-stop": "src/hooks/subagent-stop.ts",
-    },
-    format: ["esm"],
-    target: "node20",
-    outDir: "dist",
-    splitting: false,
-    sourcemap: true,
-    dts: false,
-  },
+	{
+		entry: { index: "src/index.ts" },
+		format: ["esm"],
+		target: "node20",
+		outDir: "dist",
+		clean: true,
+		splitting: false,
+		sourcemap: true,
+		dts: false,
+		banner: { js: "#!/usr/bin/env node" },
+	},
+	{
+		entry: {
+			"hooks/session-start": "src/hooks/session-start.ts",
+			"hooks/pre-tool-use": "src/hooks/pre-tool-use.ts",
+			"hooks/subagent-stop": "src/hooks/subagent-stop.ts",
+			"hooks/session-start-lite": "src/hooks/session-start-lite.ts",
+			"hooks/stop-verify-lite": "src/hooks/stop-verify-lite.ts",
+			"hooks/stop-learn-lite": "src/hooks/stop-learn-lite.ts",
+		},
+		format: ["esm"],
+		target: "node20",
+		outDir: "dist",
+		splitting: false,
+		sourcemap: true,
+		dts: false,
+	},
 ]);

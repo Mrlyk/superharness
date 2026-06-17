@@ -1,19 +1,19 @@
-import { Command } from "commander";
 import {
+	cpSync,
 	existsSync,
 	mkdirSync,
-	cpSync,
-	writeFileSync,
 	readFileSync,
 	readdirSync,
+	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { Command } from "commander";
 import pc from "picocolors";
-import { log, logError, logSuccess, logWarn } from "../utils/log.js";
-import { getPackageRoot } from "../utils/fs.js";
 import { PLATFORMS, type Platform, setupPlatform } from "../platforms/index.js";
-import { confirm } from "../utils/prompt.js";
+import { getPackageRoot } from "../utils/fs.js";
+import { log, logError, logSuccess, logWarn } from "../utils/log.js";
 import { writeMeta } from "../utils/meta.js";
+import { confirm } from "../utils/prompt.js";
 import { setupLite } from "./init-lite.js";
 
 const SUPERHARNESS_DIR = ".superharness";
@@ -54,7 +54,13 @@ function createSuperHarnessDir(projectDir: string, packageRoot: string): void {
 	}
 
 	// Copy using-superharness skill for session-start hook injection
-	const usingSkillSrc = join(packageRoot, "skills", "using-superharness", "SKILL.md");
+	const usingSkillSrc = join(
+		packageRoot,
+		"dist",
+		"skills",
+		"using-superharness",
+		"SKILL.md",
+	);
 	if (existsSync(usingSkillSrc)) {
 		writeFileSync(
 			join(shDir, "using-superharness.md"),
@@ -70,7 +76,7 @@ function copySpecTemplate(
 	template: Template,
 	packageRoot: string,
 ): void {
-	const srcDir = join(packageRoot, "spec-templates", template);
+	const srcDir = join(packageRoot, "dist", "spec-templates", template);
 	const destDir = join(projectDir, SUPERHARNESS_DIR, "spec");
 
 	if (!existsSync(srcDir)) {
@@ -127,7 +133,7 @@ function copyInitTemplates(
 	packageRoot: string,
 	platforms: Platform[],
 ): void {
-	const templatesDir = join(packageRoot, "templates");
+	const templatesDir = join(packageRoot, "dist", "templates");
 	const shDir = join(projectDir, SUPERHARNESS_DIR);
 
 	const templateFiles: Record<string, string> = {
@@ -171,11 +177,7 @@ function readPackageVersion(packageRoot: string): string {
 
 export const initCommand = new Command("init")
 	.description("在当前项目中初始化 superharness")
-	.option(
-		"-p, --platforms <platforms>",
-		"AI 平台列表，逗号分隔",
-		"claude-code",
-	)
+	.option("-p, --platforms <platforms>", "AI 平台列表，逗号分隔", "claude-code")
 	.option(
 		"-t, --template <template>",
 		"规范模板 (frontend|backend|ai-agent|fullstack|blank)",
@@ -204,9 +206,7 @@ export const initCommand = new Command("init")
 				if (!options.force) {
 					console.log("");
 					logError(`检测到项目已初始化 (${SUPERHARNESS_DIR}/ 已存在)`);
-					log(
-						`重新运行 init 会覆盖你的 spec 规范目录与配置文件。`,
-					);
+					log(`重新运行 init 会覆盖你的 spec 规范目录与配置文件。`);
 					log(`→ 要更新工具，请运行: ${pc.bold("superharness update")}`);
 					log(
 						`→ 确实要重置项目，请运行: ${pc.bold("superharness init --force")}`,
@@ -276,10 +276,10 @@ export const initCommand = new Command("init")
 			logSuccess("初始化完成!");
 			if (mode === "lite") {
 				log(
-					`下一步: 让 AI 扫描代码库生成规范 (discover 技能)，之后正常开发`,
+					`下一步: 让 AI 扫描代码库生成规范 (sh-discover 技能)，之后正常开发`,
 				);
 				log(
-					`clarify / discover / learn / test 四个技能按描述自动触发；经验沉淀到 ${pc.dim(".superharness/learnings/")}`,
+					`sh-clarify / sh-discover / sh-learn / sh-test 四个技能按描述自动触发；经验沉淀到 ${pc.dim(".superharness/learnings/")}`,
 				);
 			} else {
 				log(
