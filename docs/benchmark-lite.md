@@ -45,7 +45,7 @@ the control.
 
 Each capability scenario reports the per-check pass rate across 3 trials.
 
-### Convention adherence (`lite-suite.sh` s1, `test`/`discover`)
+### Convention adherence (`lite-suite.sh` s1, `sh-test`/`sh-discover`)
 
 The discount task must follow the project's evidenced conventions (integer cents,
 `E_*` typed errors, JSDoc, barrel export, `node:test`). Both arms reach 100% — the
@@ -62,7 +62,7 @@ This is the control for "lite does not hurt when the spec is already obvious."
 | typedError | 3/3 | 3/3 |
 | testsCoverAndPass | 3/3 | 3/3 |
 
-### Cross-session memory (`lite-suite.sh` s2, `learn` + SessionStart hook)
+### Cross-session memory (`lite-suite.sh` s2, `sh-learn` + SessionStart hook)
 
 Three persisted learnings (pnpm not npm, ISO-8601 UTC timestamps, README
 quickstart) must shape the new work. The SessionStart hook injects the learnings
@@ -76,7 +76,7 @@ index; the bare model, with no memory channel, ignores all three.
 | readmeExample | 0/3 | 3/3 |
 | testsPass | 3/3 | 3/3 |
 
-### Requirement clarification (`lite-suite.sh` s3, `clarify`)
+### Requirement clarification (`lite-suite.sh` s3, `sh-clarify`)
 
 On an ambiguous request the assistant should surface the load-bearing question
 (format/fields) instead of guessing an implementation. Scored as full success only
@@ -87,7 +87,7 @@ when it asked AND wrote no premature code.
 | askedKeyQuestion | 0/3 | 1/3 |
 | noPrematureCode | 0/3 | 1/3 |
 
-### Final test pass (`lite-suite.sh` s4, `test`)
+### Final test pass (`lite-suite.sh` s4, `sh-test`)
 
 A just-developed `applyCoupon` carries two planted bugs (float result, missing
 `E_RANGE` validation). The test skill should expose them and land the fixes with

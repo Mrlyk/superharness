@@ -9,8 +9,10 @@ import {
 } from "../utils/hooks.js";
 
 // Lite installs the four-capability core plus the two reviewers the test
-// skill drives — never the heavy greenfield workflow skills/agents.
-export const LITE_SKILLS = ["clarify", "discover", "learn", "test"];
+// skill drives — never the heavy greenfield workflow skills/agents. The skills
+// carry an "sh-" prefix at the source so their bare names never collide with
+// the user's own .claude/skills entries.
+export const LITE_SKILLS = ["sh-clarify", "sh-discover", "sh-learn", "sh-test"];
 export const LITE_AGENTS = ["spec-reviewer", "code-reviewer"];
 export const LITE_HOOKS = [
 	"session-start.cjs",

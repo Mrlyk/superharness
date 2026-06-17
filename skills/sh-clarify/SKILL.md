@@ -1,5 +1,5 @@
 ---
-name: clarify
+name: sh-clarify
 description: Surface unresolved decisions in a development request and ask the user before implementing. Use when starting a non-trivial dev task whose requirements leave open questions that would change the implementation (scope, data shape, UX behavior, compatibility), or when the user asks to confirm first ("先确认一下", "有不清楚的先问").
 ---
 

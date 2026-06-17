@@ -276,10 +276,10 @@ export const initCommand = new Command("init")
 			logSuccess("初始化完成!");
 			if (mode === "lite") {
 				log(
-					`下一步: 让 AI 扫描代码库生成规范 (discover 技能)，之后正常开发`,
+					`下一步: 让 AI 扫描代码库生成规范 (sh-discover 技能)，之后正常开发`,
 				);
 				log(
-					`clarify / discover / learn / test 四个技能按描述自动触发；经验沉淀到 ${pc.dim(".superharness/learnings/")}`,
+					`sh-clarify / sh-discover / sh-learn / sh-test 四个技能按描述自动触发；经验沉淀到 ${pc.dim(".superharness/learnings/")}`,
 				);
 			} else {
 				log(

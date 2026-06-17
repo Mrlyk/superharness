@@ -1,5 +1,5 @@
 ---
-name: test
+name: sh-test
 description: "After ALL development on a task is complete, run one terminal review-and-test pass: Spec Review, then Code Review, then the test suite. Use when wrapping up a coding task (\"终检\", \"补测试\", \"final review\", finishing development) — not during development, and not per change."
 ---
 

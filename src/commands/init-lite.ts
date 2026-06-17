@@ -42,7 +42,7 @@ export function ensureLiteScaffolding(
 	const indexPath = join(shDir, "learnings", "INDEX.md");
 	if (!existsSync(indexPath)) writeFileSync(indexPath, "# Learnings\n");
 
-	// Blank spec entry; discover fills the tree from real code evidence.
+	// Blank spec entry; sh-discover fills the tree from real code evidence.
 	const skeletonSrc = join(
 		packageRoot,
 		"spec-templates",

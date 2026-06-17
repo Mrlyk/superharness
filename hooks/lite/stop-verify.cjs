@@ -144,7 +144,7 @@ function main() {
       + 'large inputs, zero and negative values, off-by-one boundaries, and any case your '
       + 'algorithm handles only implicitly. Run it. If an assertion fails, fix the root cause '
       + 'in the code, not the test; if everything passes, do NOT refactor working code. Delete '
-      + 'the script and include the run output. For a larger change, run the superharness test skill.',
+      + 'the script and include the run output. For a larger change, run the sh-test skill.',
   }));
 }
 

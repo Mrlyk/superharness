@@ -162,8 +162,8 @@ describe("update command", () => {
 	it("lite is the default: installs only the four-capability set", async () => {
 		await runCommand(initCommand, "init", []);
 		const cmds = join(projectDir, ".claude", "skills");
-		expect(existsSync(join(cmds, "clarify"))).toBe(true);
-		expect(existsSync(join(cmds, "test"))).toBe(true);
+		expect(existsSync(join(cmds, "sh-clarify"))).toBe(true);
+		expect(existsSync(join(cmds, "sh-test"))).toBe(true);
 		// heavy workflow skills must NOT be installed in lite
 		expect(existsSync(join(cmds, "go"))).toBe(false);
 		expect(
@@ -219,8 +219,8 @@ describe("update command", () => {
 
 		// lite artifacts installed
 		const skillsDir = join(projectDir, ".claude", "skills");
-		expect(existsSync(join(skillsDir, "clarify"))).toBe(true);
-		expect(existsSync(join(skillsDir, "test"))).toBe(true);
+		expect(existsSync(join(skillsDir, "sh-clarify"))).toBe(true);
+		expect(existsSync(join(skillsDir, "sh-test"))).toBe(true);
 		expect(
 			existsSync(join(projectDir, ".claude", "hooks", "session-start.cjs")),
 		).toBe(true);
@@ -249,18 +249,21 @@ describe("update command", () => {
 		expect(settings).toContain("stop-verify.cjs");
 	});
 
-	it("lite update prunes retired superharness skills but keeps the user's own and the sediment", async () => {
+	it("lite update prunes skills lite no longer ships, keeps the user's own (even a same bare name) and the sediment", async () => {
 		await runCommand(initCommand, "init", []);
 		const skillsDir = join(projectDir, ".claude", "skills");
 
-		// a superharness-known skill lite does not ship (simulates a retired/full skill)
+		// a superharness-known skill lite does not ship (a retired / full-only skill)
 		mkdirSync(join(skillsDir, "go"), { recursive: true });
 		writeFileSync(join(skillsDir, "go", "SKILL.md"), "stale superharness skill");
 		// the user's own skill — must survive (not a name superharness ships)
 		mkdirSync(join(skillsDir, "my-own"), { recursive: true });
 		writeFileSync(join(skillsDir, "my-own", "SKILL.md"), "mine");
-		// a stale file inside a managed skill — clean reinstall must drop it
-		writeFileSync(join(skillsDir, "clarify", "STALE.md"), "leftover");
+		// the user's own skill that happens to share a lite bare name — must survive untouched
+		mkdirSync(join(skillsDir, "clarify"), { recursive: true });
+		writeFileSync(join(skillsDir, "clarify", "SKILL.md"), "user clarify");
+		// a stale file inside a managed sh- skill — clean reinstall must drop it
+		writeFileSync(join(skillsDir, "sh-clarify", "STALE.md"), "leftover");
 		// sediment under .superharness/ — must survive
 		const learning = join(projectDir, ".superharness", "learnings", "keep.md");
 		writeFileSync(learning, "# keep");
@@ -270,8 +273,11 @@ describe("update command", () => {
 
 		expect(existsSync(join(skillsDir, "go"))).toBe(false); // retired pruned
 		expect(existsSync(join(skillsDir, "my-own"))).toBe(true); // user kept
-		expect(existsSync(join(skillsDir, "clarify"))).toBe(true); // current present
-		expect(existsSync(join(skillsDir, "clarify", "STALE.md"))).toBe(false); // intra-skill stale gone
+		expect(readFileSync(join(skillsDir, "clarify", "SKILL.md"), "utf-8")).toBe(
+			"user clarify",
+		); // user's bare-name skill left untouched
+		expect(existsSync(join(skillsDir, "sh-clarify"))).toBe(true); // current present
+		expect(existsSync(join(skillsDir, "sh-clarify", "STALE.md"))).toBe(false); // intra-skill stale gone
 		expect(readFileSync(learning, "utf-8")).toBe("# keep"); // sediment kept
 	});
 

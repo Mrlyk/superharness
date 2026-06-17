@@ -1,5 +1,5 @@
 ---
-name: discover
+name: sh-discover
 description: "Discover an existing project's conventions from real evidence and write them as the project spec: AGENTS.md + CLAUDE.md as the thin always-loaded entry, with detail under .superharness/spec/. Use when a project lacks AGENTS.md/CLAUDE.md, when asked to generate conventions (\"生成规范\", \"discover conventions\"), or when the spec is stale."
 ---
 
@@ -26,7 +26,7 @@ Spec is project conventions. Learnings (`.superharness/learnings/`) are session 
 2. `AGENTS.md` (max ~20 lines) — a one-paragraph project description, the real key commands, then exactly these pointers:
    - `Read .superharness/spec/guides/index.md before writing code; follow its links for detail.`
    - `Check .superharness/learnings/INDEX.md for past learnings; read a linked entry when relevant.`
-   - `When all development on a task is done, run the superharness test skill once: Spec Review, Code Review, then the test suite.`
+   - `When all development on a task is done, run the sh-test skill once: Spec Review, Code Review, then the test suite.`
 
    If AGENTS.md exists, only append the pointer lines that are missing. Never rewrite existing user content.
 

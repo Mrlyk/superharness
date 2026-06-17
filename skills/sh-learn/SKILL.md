@@ -1,5 +1,5 @@
 ---
-name: learn
+name: sh-learn
 description: Persist durable learnings from the current session (user corrections, pitfalls and fixes, project decisions not visible in code) into the project knowledge wiki at .superharness/learnings/. Use when the user asks to summarize or persist learnings ("总结一下经验", "沉淀一下", "记住这个"), or when triggered automatically at session end.
 ---
 

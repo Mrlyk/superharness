@@ -103,7 +103,7 @@ function main() {
     if (drift !== null && drift > STALE_COMMITS) {
       parts.push(
         `.superharness/spec/ is ${drift} commits behind HEAD; suggest running the `
-        + 'superharness discover skill to refresh the project spec when convenient.',
+        + 'sh-discover skill to refresh the project spec when convenient.',
       );
     }
   } else if (looksLikeProject(root)) {
@@ -111,7 +111,7 @@ function main() {
     // AGENTS.md from another tool, does not count). Suggest generating it.
     parts.push(
       'This project has no superharness project spec yet. Suggest running the '
-      + 'superharness discover skill once to scan the codebase and generate one.',
+      + 'sh-discover skill once to scan the codebase and generate one.',
     );
   }
 

@@ -51,13 +51,13 @@ A/B on the same tasks and model (Sonnet), deterministic graders. Full methodolog
 npm install -g superharness
 ```
 
-**Lite (default)** — existing-project maintenance, installs only `discover` / `clarify` / `test` / `learn`:
+**Lite (default)** — existing-project maintenance, installs only `sh-discover` / `sh-clarify` / `sh-test` / `sh-learn`:
 
 ```bash
 superharness init
 ```
 
-Then just code: have your AI run `discover` once to scan the codebase; clarify / test / learn fire automatically via hooks — no commands needed.
+Then just code: have your AI run `sh-discover` once to scan the codebase; sh-clarify / sh-test / sh-learn fire automatically via hooks — no commands needed.
 
 **Full (`--full`)** — the complete greenfield workflow:
 
@@ -96,16 +96,16 @@ Multiple platforms: `--platforms claude-code,cursor`
 
 ## Lite mode
 
-**Less is more.** Lite installs only four compounding capabilities — memory (`learn`), a spec (`discover`), clarification (`clarify`), and a final verify (`test`) — and nothing else.
+**Less is more.** Lite installs only four compounding capabilities — memory (`sh-learn`), a spec (`sh-discover`), clarification (`sh-clarify`), and a final verify (`sh-test`) — and nothing else.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Mrlyk/superharness/main/docs/images/superharness-lite-workflow-en.svg" alt="Superharness Lite — one self-reinforcing loop" width="100%" />
 </p>
 
-- **discover** — scan the codebase once and write a minimal project spec: `AGENTS.md` + `CLAUDE.md` as the thin always-loaded entry, detail under `.superharness/spec/`.
-- **clarify** — auto-surfaces genuinely-undecided requirements and asks before coding; stays out of the way when the request is already clear.
-- **test** — a verify-before-done gate that makes the model run its code (documented examples + adversarial edge cases) before declaring done, plus an explicit Spec + Code review skill to run once when a whole task is complete.
-- **learn** — durable learnings from each session (corrections, pitfalls, decisions) persist to `.superharness/learnings/` and load into future sessions.
+- **sh-discover** — scan the codebase once and write a minimal project spec: `AGENTS.md` + `CLAUDE.md` as the thin always-loaded entry, detail under `.superharness/spec/`.
+- **sh-clarify** — auto-surfaces genuinely-undecided requirements and asks before coding; stays out of the way when the request is already clear.
+- **sh-test** — a verify-before-done gate that makes the model run its code (documented examples + adversarial edge cases) before declaring done, plus an explicit Spec + Code review skill to run once when a whole task is complete.
+- **sh-learn** — durable learnings from each session (corrections, pitfalls, decisions) persist to `.superharness/learnings/` and load into future sessions.
 
 Each capability is a skill: the session-start hook injects the spec + past learnings at the start of every session, and the stop hook runs the verify gate and the background learner when a turn ends.
 
@@ -266,7 +266,7 @@ In lite mode `superharness init` creates a minimal `.superharness/`:
 ├── using-superharness-lite.md        # Lite operating manual (SessionStart hook injected)
 ├── learnings/                        # Self-learning store
 │   └── INDEX.md
-└── spec/                             # Project conventions (discover-generated, hook-injected entry)
+└── spec/                             # Project conventions (sh-discover-generated, hook-injected entry)
     └── guides/index.md
 ```
 
@@ -299,14 +299,14 @@ In lite mode `superharness init` creates a minimal `.superharness/`:
 
 ## Skills
 
-Lite installs only `discover` / `clarify` / `test` / `learn`; full installs the entire table below.
+Lite installs only `sh-discover` / `sh-clarify` / `sh-test` / `sh-learn`; full installs the entire table below.
 
 | Category | Skill | Purpose |
 |----------|-------|---------|
-| Lite (default) | `discover` | Scan the codebase into a minimal spec: `AGENTS.md`/`CLAUDE.md` entry + `.superharness/spec/` |
-| | `clarify` | Auto-asks on ambiguous requests, stays quiet when clear |
-| | `test` | Verify-before-done gate + Spec/Code review |
-| | `learn` | Persist session learnings to `.superharness/learnings/`, auto-injected next session |
+| Lite (default) | `sh-discover` | Scan the codebase into a minimal spec: `AGENTS.md`/`CLAUDE.md` entry + `.superharness/spec/` |
+| | `sh-clarify` | Auto-asks on ambiguous requests, stays quiet when clear |
+| | `sh-test` | Verify-before-done gate + Spec/Code review |
+| | `sh-learn` | Persist session learnings to `.superharness/learnings/`, auto-injected next session |
 | | `using-superharness-lite` | Lite operating manual (SessionStart hook injected) |
 | Full workflow | `go` | Main entry: end-to-end workflow orchestration |
 | | `brainstorm` | Requirement clarification + spec discovery + mindmap |
