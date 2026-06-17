@@ -1,19 +1,7 @@
-import {
-	existsSync,
-	mkdtempSync,
-	readFileSync,
-	rmSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-	afterEach,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initCommand } from "./init.js";
 
 interface ExitError extends Error {
@@ -84,6 +72,20 @@ describe("init command", () => {
 		expect(config).toContain("- claude-code");
 		expect(config).not.toContain("- cursor");
 		expect(config).toContain('mode: "lite"');
+	});
+
+	it("lite supports qoder: keeps it in config and installs its agents + settings", async () => {
+		const code = await runInit(["--platforms", "claude-code,codex,qoder"]);
+		expect(code).toBe(0);
+		const config = readFileSync(
+			join(projectDir, ".superharness", "config.yaml"),
+			"utf-8",
+		);
+		expect(config).toContain("- qoder");
+		expect(
+			existsSync(join(projectDir, ".qoder", "agents", "code-reviewer.md")),
+		).toBe(true);
+		expect(existsSync(join(projectDir, ".qoder", "settings.json"))).toBe(true);
 	});
 
 	it("refuses to re-init when .superharness/ already exists", async () => {

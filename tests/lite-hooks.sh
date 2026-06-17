@@ -70,6 +70,17 @@ printf 'Read .superharness/spec/guides/index.md before writing code.\n' >> "$S/A
 assert_empty "wired AGENTS.md stops the discover nudge" "$(ss "$S" | grep -o 'scan the codebase and generate' || true)"
 assert_empty "non-git cwd stays silent" "$(printf '{"cwd":"%s","source":"startup"}' "$TMP/nogit" | node "$HOOKS/session-start.cjs")"
 
+echo "== session-start.cjs (UserPromptSubmit / Qoder) =="
+# Qoder has no SessionStart, so the hook runs on UserPromptSubmit and must inject
+# only on the first prompt of a session (keyed by session_id). S still has the
+# learnings index created above, so there is something to inject.
+ups() { printf '{"cwd":"%s","hook_event_name":"UserPromptSubmit","session_id":"%s"}' "$1" "$2" | node "$HOOKS/session-start.cjs"; }
+out1="$(ups "$S" qsess1)"
+assert_contains "UserPromptSubmit injects on the first prompt" "$out1" 'Past learnings'
+assert_contains "UserPromptSubmit tags the output with its own event name" "$out1" 'UserPromptSubmit'
+assert_empty "same session stays silent on later prompts" "$(ups "$S" qsess1)"
+assert_contains "a new session_id injects again" "$(ups "$S" qsess2)" 'Past learnings'
+
 echo
 echo "lite-hooks: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

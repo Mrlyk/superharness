@@ -80,7 +80,7 @@ export function setupLite(
 	);
 	if (effective.length === 0)
 		logWarn(
-			"lite 仅支持 claude-code / codex / aone-copilot；本次没有可安装的平台适配",
+			"lite 仅支持 claude-code / codex / qoder / aone-copilot；本次没有可安装的平台适配",
 		);
 
 	const shDir = join(projectDir, SUPERHARNESS_DIR);

@@ -169,6 +169,10 @@ describe("update command", () => {
 		expect(
 			existsSync(join(projectDir, ".superharness", "learnings", "INDEX.md")),
 		).toBe(true);
+		// lite installs the two reviewer agents alongside the skills
+		expect(
+			existsSync(join(projectDir, ".claude", "agents", "code-reviewer.md")),
+		).toBe(true);
 		const config = readFileSync(
 			join(projectDir, ".superharness", "config.yaml"),
 			"utf-8",
@@ -255,7 +259,10 @@ describe("update command", () => {
 
 		// a superharness-known skill lite does not ship (a retired / full-only skill)
 		mkdirSync(join(skillsDir, "go"), { recursive: true });
-		writeFileSync(join(skillsDir, "go", "SKILL.md"), "stale superharness skill");
+		writeFileSync(
+			join(skillsDir, "go", "SKILL.md"),
+			"stale superharness skill",
+		);
 		// the user's own skill — must survive (not a name superharness ships)
 		mkdirSync(join(skillsDir, "my-own"), { recursive: true });
 		writeFileSync(join(skillsDir, "my-own", "SKILL.md"), "mine");
@@ -311,5 +318,92 @@ describe("update command", () => {
 		expect(sessionEntries).toHaveLength(1); // no duplicate registration
 		expect(JSON.stringify(after)).not.toContain("--OUTDATED"); // stale registration refreshed
 		expect(JSON.stringify(after)).toContain("session-start.cjs");
+	});
+
+	it("lite installs codex TOML agents and qoder markdown agents + hooks", async () => {
+		await runCommand(initCommand, "init", [
+			"--platforms",
+			"claude-code,codex,qoder",
+		]);
+
+		// codex: agents converted to TOML, only the two lite reviewers
+		const codexAgents = join(projectDir, ".codex", "agents");
+		const codexToml = readFileSync(
+			join(codexAgents, "code-reviewer.toml"),
+			"utf-8",
+		);
+		expect(codexToml).toContain('name = "code-reviewer"');
+		expect(codexToml).toContain("developer_instructions = '''");
+		expect(existsSync(join(codexAgents, "spec-reviewer.toml"))).toBe(true);
+		// full-only agents must NOT be installed in lite
+		expect(existsSync(join(codexAgents, "check.toml"))).toBe(false);
+
+		// qoder: agents are Markdown passthrough, byte-identical to source
+		const qoderAgent = readFileSync(
+			join(projectDir, ".qoder", "agents", "code-reviewer.md"),
+			"utf-8",
+		);
+		expect(qoderAgent).toBe(
+			readFileSync(join(originalCwd, "agents", "code-reviewer.md"), "utf-8"),
+		);
+		expect(existsSync(join(projectDir, ".qoder", "skills", "sh-test"))).toBe(
+			true,
+		);
+
+		// qoder hooks live in .qoder/settings.json: UserPromptSubmit (manual) + Stop
+		const qoderSettings = readFileSync(
+			join(projectDir, ".qoder", "settings.json"),
+			"utf-8",
+		);
+		expect(qoderSettings).toContain("UserPromptSubmit");
+		expect(qoderSettings).toContain("session-start.cjs");
+		expect(qoderSettings).toContain("stop-verify.cjs");
+		expect(qoderSettings).toContain("Stop");
+
+		// claude lite also gets the reviewer agents
+		expect(
+			existsSync(join(projectDir, ".claude", "agents", "code-reviewer.md")),
+		).toBe(true);
+	});
+
+	it("full→lite strips full-only codex/qoder agents, keeps the lite reviewers", async () => {
+		await runCommand(initCommand, "init", [
+			"--full",
+			"--platforms",
+			"claude-code,codex,qoder",
+		]);
+
+		// sanity: full installs ALL agents on both platforms
+		expect(existsSync(join(projectDir, ".codex", "agents", "check.toml"))).toBe(
+			true,
+		);
+		expect(existsSync(join(projectDir, ".qoder", "agents", "check.md"))).toBe(
+			true,
+		);
+
+		const code = await runCommand(updateCommand, "update", ["--lite", "--yes"]);
+		expect(code).toBe(0);
+
+		// full-only agents removed on both platforms
+		expect(existsSync(join(projectDir, ".codex", "agents", "check.toml"))).toBe(
+			false,
+		);
+		expect(existsSync(join(projectDir, ".qoder", "agents", "check.md"))).toBe(
+			false,
+		);
+		// lite reviewers kept
+		expect(
+			existsSync(join(projectDir, ".codex", "agents", "code-reviewer.toml")),
+		).toBe(true);
+		expect(
+			existsSync(join(projectDir, ".qoder", "agents", "code-reviewer.md")),
+		).toBe(true);
+		// lite hook configs now present
+		expect(existsSync(join(projectDir, ".codex", "hooks.json"))).toBe(true);
+		expect(existsSync(join(projectDir, ".qoder", "settings.json"))).toBe(true);
+		// mode flipped to lite
+		expect(
+			readFileSync(join(projectDir, ".superharness", "config.yaml"), "utf-8"),
+		).toContain('mode: "lite"');
 	});
 });

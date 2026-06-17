@@ -1,8 +1,6 @@
 import { logWarn } from "../utils/log.js";
-import { setupClaudeCode } from "./claude-code.js";
+import { ADAPTERS } from "./adapter.js";
 import { setupAoneCopilot } from "./aone-copilot.js";
-import { setupCodex } from "./codex.js";
-import { setupQoder } from "./qoder.js";
 import { setupCursor } from "./cursor.js";
 
 export const PLATFORMS = [
@@ -22,18 +20,17 @@ export function setupPlatform(
 	projectDir: string,
 	packageRoot: string,
 ): void {
+	// claude-code / codex / qoder are managed by PlatformAdapter; the rest stay on
+	// the legacy per-platform setup until they are ported (or removed).
+	const adapter = ADAPTERS[platform];
+	if (adapter) {
+		adapter.installFull(projectDir, packageRoot);
+		return;
+	}
+
 	switch (platform) {
-		case "claude-code":
-			setupClaudeCode(projectDir, packageRoot);
-			break;
 		case "aone-copilot":
 			setupAoneCopilot(projectDir, packageRoot);
-			break;
-		case "codex":
-			setupCodex(projectDir, packageRoot);
-			break;
-		case "qoder":
-			setupQoder(projectDir, packageRoot);
 			break;
 		case "cursor":
 			setupCursor(projectDir, packageRoot);
@@ -43,6 +40,9 @@ export function setupPlatform(
 			break;
 		case "copilot":
 			logWarn("GitHub Copilot: 适配器待开发 (Phase 2)");
+			break;
+		default:
+			logWarn(`未知平台 "${platform}"，已跳过`);
 			break;
 	}
 }
