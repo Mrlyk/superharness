@@ -104,10 +104,10 @@ Multiple platforms: `--platforms claude-code,cursor`
 
 - **sh-discover** — scan the codebase once and write a minimal project spec: `AGENTS.md` + `CLAUDE.md` as the thin always-loaded entry, detail under `.superharness/spec/`.
 - **sh-clarify** — auto-surfaces genuinely-undecided requirements and asks before coding; stays out of the way when the request is already clear.
-- **sh-test** — a verify-before-done gate that makes the model run its code (documented examples + adversarial edge cases) before declaring done, plus an explicit Spec + Code review skill to run once when a whole task is complete.
+- **sh-test** — a terminal Spec + Code review and test-suite pass to run once a whole task is complete. Whether an interim change needs its own tests is the model's call, scaled to complexity — not a forced gate; when it does, real project tests get committed, not throwaway scripts.
 - **sh-learn** — durable learnings from each session (corrections, pitfalls, decisions) persist to `.superharness/learnings/` and load into future sessions.
 
-Each capability is a skill: the session-start hook injects the spec + past learnings at the start of every session, and the stop hook runs the verify gate and the background learner when a turn ends.
+Each capability is a skill: the session-start hook injects the spec + past learnings at the start of every session, and the stop hook runs the background learner when a turn ends.
 
 ## Full mode
 

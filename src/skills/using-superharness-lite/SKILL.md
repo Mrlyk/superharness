@@ -50,9 +50,13 @@ When multiple skills could apply, use this order:
 "Let's build X" → clarify undecided requirements first, then implement.
 "Fix this bug" → investigate root cause first, then fix, then the terminal test pass.
 
+## Testing — Your Call
+
+Whether a change needs tests is your judgment, scaled to its complexity and risk. Trivial edits can skip it. When a change does warrant coverage, add real tests to the project's existing test framework — committed and long-lived, so they keep guarding the behavior — not throwaway scripts you run once and delete. `sh-test` is the terminal review-and-test pass once all development on the task is done.
+
 ## Skill Types
 
-**Rigid** (sh-test, verification): Follow exactly. Don't adapt away discipline.
+**Rigid** (sh-test): Follow exactly. Don't adapt away discipline.
 
 **Flexible** (sh-clarify, sh-discover): Adapt principles to context.
 

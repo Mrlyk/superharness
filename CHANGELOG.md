@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-06-17
+
+### Changed
+
+- **lite 终检改为模型自主判断，移除 stop-verify 强制门控** -- 删除 `stop-verify-lite` 钩子（连同 `SUPERHARNESS_VERIFY_MIN_LINES` 阈值、`.verify.json` 游标状态、`hooks.ts` 的 `stop-verify` marker）。是否补测试不再在 Stop 阶段强制阻断收尾，改为在 SessionStart 注入的 `using-superharness-lite` 引导里交给模型按本次改动复杂度自行决定；判断需要时写**正式的项目单测**（提交进仓库、长期沉淀），而非跑完即删的一次性脚本。`sh-test` 仍是全部开发完成后的终检（Spec + Code Review + 测试套件）。Stop 阶段只保留后台学习器 `stop-learn-lite`，三平台（claude-code / codex / qoder）与 aone-copilot 同步摘除该钩子。
+
 ## 2026-06-15 — 0.9.0
 
 「Less is more」。随着模型能力增强，原来那套从头到尾的强制工作流对**存量项目维护**偏重。0.9.0 引入 **lite 模式**：用最小的套件接入存量项目，以自学习为核，去掉强制工作流。完整 greenfield 工作流保留为 `--full`，零改动、零回归。

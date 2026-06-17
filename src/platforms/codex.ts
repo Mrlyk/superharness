@@ -54,8 +54,7 @@ function installLite(projectDir: string, packageRoot: string): void {
 
 	// Codex consumes the same hook-JSON shape (PascalCase events). The background
 	// learner runs via `codex exec`, selected by SUPERHARNESS_LEARN_CLI=codex set
-	// inline on the command. Codex does file I/O through the shell, so the verify
-	// gate's git-based churn detection still works.
+	// inline on the command.
 	removeSuperharnessHooks(join(codexDir, "hooks.json"));
 	mergeHookConfig(
 		join(codexDir, "hooks.json"),
@@ -74,11 +73,6 @@ function installLite(projectDir: string, packageRoot: string): void {
 			Stop: [
 				{
 					hooks: [
-						{
-							type: "command",
-							command: "node .codex/hooks/stop-verify-lite.js",
-							timeout: 15,
-						},
 						{
 							type: "command",
 							command:

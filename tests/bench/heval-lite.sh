@@ -12,8 +12,7 @@
 #
 #   tests/bench/heval-lite.sh [--screen-range 100:163] [--trials 3]
 #                             [--model M] [--concurrency C] [--hard "12 33"]
-#   BENCH_ARMS="B" re-measures only arm B; BENCH_VERIFY_MIN=N overrides the
-#   arm-B churn threshold (e.g. 1 to force the gate on every solution).
+#   BENCH_ARMS="B" re-measures only arm B.
 set -uo pipefail
 
 BENCH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,7 +23,6 @@ TRIALS=3
 CONC=3
 RANGE="100:163"
 HARD_OVERRIDE=""
-VERIFY_MIN="${BENCH_VERIFY_MIN:-}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -56,7 +54,7 @@ done
 
 WORK="$(mktemp -d)"
 [[ "${BENCH_KEEP:-0}" == 1 ]] || trap 'rm -rf "$WORK"' EXIT
-echo "work dir: $WORK | model: $MODEL | trials: $TRIALS | verify_min: ${VERIFY_MIN:-default}"
+echo "work dir: $WORK | model: $MODEL | trials: $TRIALS"
 mkdir -p "$BENCH_DIR/results"
 SCREEN="$BENCH_DIR/results/$TAG-screen.jsonl"
 RESULTS="$BENCH_DIR/results/$TAG-results.jsonl"
@@ -103,7 +101,6 @@ run_one() { # dir arm problemFile outfile
     cd "$dir"
     if [[ "$arm" == B ]]; then
       export SUPERHARNESS_STATE_DIR="$dir/.state"
-      [[ -n "$VERIFY_MIN" ]] && export SUPERHARNESS_VERIFY_MIN_LINES="$VERIFY_MIN"
     fi
     claude -p "$task
 

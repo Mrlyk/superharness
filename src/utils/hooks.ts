@@ -14,7 +14,6 @@ export const SUPERHARNESS_HOOK_MARKERS = [
 	"session-start",
 	"pre-tool-use",
 	"subagent-stop",
-	"stop-verify",
 	"stop-learn",
 	"learn-prompt",
 ];
