@@ -34,7 +34,7 @@ function setupAoneCopilotLite(projectDir: string, packageRoot: string): void {
 					hooks: [
 						{
 							type: "command",
-							command: "node .aone_copilot/hooks/session-start.cjs",
+							command: "node .aone_copilot/hooks/session-start-lite.js",
 							timeout: 10,
 						},
 					],
@@ -45,12 +45,12 @@ function setupAoneCopilotLite(projectDir: string, packageRoot: string): void {
 					hooks: [
 						{
 							type: "command",
-							command: "node .aone_copilot/hooks/stop-verify.cjs",
+							command: "node .aone_copilot/hooks/stop-verify-lite.js",
 							timeout: 15,
 						},
 						{
 							type: "command",
-							command: "node .aone_copilot/hooks/stop-learn.cjs",
+							command: "node .aone_copilot/hooks/stop-learn-lite.js",
 							timeout: 15,
 						},
 					],

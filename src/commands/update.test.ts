@@ -226,7 +226,7 @@ describe("update command", () => {
 		expect(existsSync(join(skillsDir, "sh-clarify"))).toBe(true);
 		expect(existsSync(join(skillsDir, "sh-test"))).toBe(true);
 		expect(
-			existsSync(join(projectDir, ".claude", "hooks", "session-start.cjs")),
+			existsSync(join(projectDir, ".claude", "hooks", "session-start-lite.js")),
 		).toBe(true);
 
 		// lite manual present, stale full manual removed, user spec preserved, mode flipped
@@ -241,16 +241,15 @@ describe("update command", () => {
 			readFileSync(join(projectDir, ".superharness", "config.yaml"), "utf-8"),
 		).toContain('mode: "lite"');
 
-		// settings.json has no lingering full hook registrations (.js), only lite (.cjs)
+		// settings.json has no lingering full hook registrations, only lite (*-lite.js)
 		const settings = readFileSync(
 			join(projectDir, ".claude", "settings.json"),
 			"utf-8",
 		);
-		expect(settings).not.toContain("session-start.js");
 		expect(settings).not.toContain("pre-tool-use.js");
 		expect(settings).not.toContain("subagent-stop.js");
-		expect(settings).toContain("session-start.cjs");
-		expect(settings).toContain("stop-verify.cjs");
+		expect(settings).toContain("session-start-lite.js");
+		expect(settings).toContain("stop-verify-lite.js");
 	});
 
 	it("lite update prunes skills lite no longer ships, keeps the user's own (even a same bare name) and the sediment", async () => {
@@ -301,7 +300,7 @@ describe("update command", () => {
 		// tamper an existing registration to an outdated command path
 		const before = JSON.parse(readFileSync(settingsPath, "utf-8"));
 		before.hooks.SessionStart[0].hooks[0].command =
-			"node .claude/hooks/session-start.cjs --OUTDATED";
+			"node .claude/hooks/session-start-lite.js --OUTDATED";
 		writeFileSync(settingsPath, JSON.stringify(before));
 
 		const code = await runCommand(updateCommand, "update", []);
@@ -317,7 +316,7 @@ describe("update command", () => {
 		);
 		expect(sessionEntries).toHaveLength(1); // no duplicate registration
 		expect(JSON.stringify(after)).not.toContain("--OUTDATED"); // stale registration refreshed
-		expect(JSON.stringify(after)).toContain("session-start.cjs");
+		expect(JSON.stringify(after)).toContain("session-start-lite.js");
 	});
 
 	it("lite installs codex TOML agents and qoder markdown agents + hooks", async () => {
@@ -344,7 +343,10 @@ describe("update command", () => {
 			"utf-8",
 		);
 		expect(qoderAgent).toBe(
-			readFileSync(join(originalCwd, "agents", "code-reviewer.md"), "utf-8"),
+			readFileSync(
+				join(originalCwd, "src", "agents", "code-reviewer.md"),
+				"utf-8",
+			),
 		);
 		expect(existsSync(join(projectDir, ".qoder", "skills", "sh-test"))).toBe(
 			true,
@@ -356,8 +358,8 @@ describe("update command", () => {
 			"utf-8",
 		);
 		expect(qoderSettings).toContain("UserPromptSubmit");
-		expect(qoderSettings).toContain("session-start.cjs");
-		expect(qoderSettings).toContain("stop-verify.cjs");
+		expect(qoderSettings).toContain("session-start-lite.js");
+		expect(qoderSettings).toContain("stop-verify-lite.js");
 		expect(qoderSettings).toContain("Stop");
 
 		// claude lite also gets the reviewer agents

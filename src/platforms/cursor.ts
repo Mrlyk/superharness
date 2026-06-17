@@ -19,7 +19,7 @@ export function setupCursor(projectDir: string, packageRoot: string): void {
 	);
 
 	// 2. Copy agents
-	const agentsSrc = join(packageRoot, "agents");
+	const agentsSrc = join(packageRoot, "dist", "agents");
 	if (existsSync(agentsSrc)) {
 		cpSync(agentsSrc, agentsDir, { recursive: true });
 		logSuccess("Cursor: 已复制 agent 到 .cursor/agents/");

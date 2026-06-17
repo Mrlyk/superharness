@@ -56,7 +56,7 @@ function installLite(projectDir: string, packageRoot: string): void {
 	// Qoder hooks live under "hooks" in .qoder/settings.json (PascalCase events,
 	// same shape as Claude Code's settings.json). Qoder has NO SessionStart event,
 	// so the operating-manual injection is registered on UserPromptSubmit instead
-	// — session-start.cjs guards on session_id to inject only on the first prompt.
+	// — session-start-lite guards on session_id to inject only on the first prompt.
 	// Qoder's Stop cannot hard-block, so the verify gate there is advisory; the
 	// background learner (stop-learn) is unaffected.
 	removeSuperharnessHooks(join(qoderDir, "settings.json"));
@@ -66,7 +66,7 @@ function installLite(projectDir: string, packageRoot: string): void {
 				hooks: [
 					{
 						type: "command",
-						command: "node .qoder/hooks/session-start.cjs",
+						command: "node .qoder/hooks/session-start-lite.js",
 						timeout: 10,
 					},
 				],
@@ -77,12 +77,12 @@ function installLite(projectDir: string, packageRoot: string): void {
 				hooks: [
 					{
 						type: "command",
-						command: "node .qoder/hooks/stop-verify.cjs",
+						command: "node .qoder/hooks/stop-verify-lite.js",
 						timeout: 15,
 					},
 					{
 						type: "command",
-						command: "node .qoder/hooks/stop-learn.cjs",
+						command: "node .qoder/hooks/stop-learn-lite.js",
 						timeout: 15,
 					},
 				],

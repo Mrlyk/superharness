@@ -65,7 +65,7 @@ function installLite(projectDir: string, packageRoot: string): void {
 					hooks: [
 						{
 							type: "command",
-							command: "node .codex/hooks/session-start.cjs",
+							command: "node .codex/hooks/session-start-lite.js",
 							timeout: 10,
 						},
 					],
@@ -76,13 +76,13 @@ function installLite(projectDir: string, packageRoot: string): void {
 					hooks: [
 						{
 							type: "command",
-							command: "node .codex/hooks/stop-verify.cjs",
+							command: "node .codex/hooks/stop-verify-lite.js",
 							timeout: 15,
 						},
 						{
 							type: "command",
 							command:
-								"SUPERHARNESS_LEARN_CLI=codex node .codex/hooks/stop-learn.cjs",
+								"SUPERHARNESS_LEARN_CLI=codex node .codex/hooks/stop-learn-lite.js",
 							timeout: 15,
 						},
 					],

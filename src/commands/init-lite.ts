@@ -19,6 +19,7 @@ const SUPERHARNESS_DIR = ".superharness";
 export function writeLiteManual(projectDir: string, packageRoot: string): void {
 	const src = join(
 		packageRoot,
+		"dist",
 		"skills",
 		"using-superharness-lite",
 		"SKILL.md",
@@ -45,6 +46,7 @@ export function ensureLiteScaffolding(
 	// Blank spec entry; sh-discover fills the tree from real code evidence.
 	const skeletonSrc = join(
 		packageRoot,
+		"dist",
 		"spec-templates",
 		"blank",
 		"guides",

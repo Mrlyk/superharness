@@ -1,7 +1,6 @@
-"use strict";
 // Single source of truth for the auto-learning instruction.
 //
-// The Stop hook (stop-learn.js) injects this into a background `claude -p`
+// The Stop hook (stop-learn-lite) injects this into a background `claude -p`
 // learner; the learn-auto / learn-wiki benchmarks read it back (via the hook's
 // dry-run mode) so arm B always tests the exact instruction production ships.
 // Keep the wiki-merge cues here intact — they are what the benchmark grades.
@@ -13,7 +12,7 @@ const REPLAY_HEADER =
 // What the learner must do with the session it just reviewed. Phrased to work
 // both as a background prompt (after a replay) and as an inline Stop-block
 // reason (the sync fallback), so there is one wording to benchmark and ship.
-const LEARN_INSTRUCTION =
+export const LEARN_INSTRUCTION =
 	"Review this development session for durable learnings: user corrections, " +
 	"pitfalls with their fixes, or project decisions not visible in code. " +
 	"If none qualify, do nothing and stop. Otherwise persist them in the project " +
@@ -41,7 +40,7 @@ const LEARN_INSTRUCTION =
 // (apply_patch / cat), so forbidding shell would leave it unable to read or write
 // the wiki at all; instead it is sandboxed to workspace-write and told to touch
 // only the learnings directory and never git/commit.
-const CHILD_GUARDRAILS = {
+export const CHILD_GUARDRAILS: Record<string, string> = {
 	claude:
 		"Operating rules: edit only files under .superharness/learnings/. Do not touch " +
 		"any other file. Merge into existing pages — never delete a page. Do not run " +
@@ -57,14 +56,7 @@ const CHILD_GUARDRAILS = {
 // Render a transcript-derived replay plus the instruction for the background
 // learner. The replay is the only context the fresh learner session has. `cli`
 // selects the guardrail wording for the target runtime ('claude' | 'codex').
-function buildChildPrompt(replay, cli) {
+export function buildChildPrompt(replay: string, cli: string): string {
 	const guardrails = CHILD_GUARDRAILS[cli] || CHILD_GUARDRAILS.claude;
 	return `${REPLAY_HEADER}\n\n${replay}\n\n${LEARN_INSTRUCTION}\n\n${guardrails}`;
 }
-
-module.exports = {
-	REPLAY_HEADER,
-	LEARN_INSTRUCTION,
-	CHILD_GUARDRAILS,
-	buildChildPrompt,
-};

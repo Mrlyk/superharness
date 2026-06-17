@@ -23,7 +23,7 @@ export function getPackageRoot(): string {
 }
 
 export function listSkillDirs(packageRoot: string): string[] {
-	const skillsDir = join(packageRoot, "skills");
+	const skillsDir = join(packageRoot, "dist", "skills");
 	if (!existsSync(skillsDir)) return [];
 	return readdirSync(skillsDir).filter((name) => {
 		const fullPath = join(skillsDir, name);
@@ -38,7 +38,7 @@ export function copySkillToCommands(
 	skillName: string,
 	commandsNamespaceDir: string,
 ): void {
-	const srcDir = join(packageRoot, "skills", skillName);
+	const srcDir = join(packageRoot, "dist", "skills", skillName);
 	const destDir = join(commandsNamespaceDir, skillName);
 	cpSync(srcDir, destDir, { recursive: true });
 }
@@ -49,7 +49,7 @@ export function copySkillFlat(
 	prefix: string,
 	destDir: string,
 ): void {
-	const srcPath = join(packageRoot, "skills", skillName, "SKILL.md");
+	const srcPath = join(packageRoot, "dist", "skills", skillName, "SKILL.md");
 	const content = readFileSync(srcPath, "utf-8");
 	mkdirSync(destDir, { recursive: true });
 	writeFileSync(join(destDir, `${prefix}-${skillName}.md`), content);
@@ -60,7 +60,7 @@ export function copySkillDir(
 	skillName: string,
 	destDir: string,
 ): void {
-	const srcDir = join(packageRoot, "skills", skillName);
+	const srcDir = join(packageRoot, "dist", "skills", skillName);
 	const targetDir = join(destDir, skillName);
 	cpSync(srcDir, targetDir, { recursive: true });
 }
@@ -82,8 +82,9 @@ export function copyHookScripts(
 	return copied;
 }
 
-// Lite hooks are committed plain JS (no build step), copied straight from
-// hooks/lite/ — not the tsup-compiled dist/hooks/ that full mode uses.
+// Lite hooks are TypeScript compiled by tsup to dist/hooks/*-lite.js (same as
+// the full hooks), then copied verbatim from there. `files` are the built
+// filenames (e.g. session-start-lite.js).
 export function copyLiteHooks(
 	packageRoot: string,
 	destHooksDir: string,
@@ -92,7 +93,7 @@ export function copyLiteHooks(
 	mkdirSync(destHooksDir, { recursive: true });
 	let copied = 0;
 	for (const file of files) {
-		const src = join(packageRoot, "hooks", "lite", file);
+		const src = join(packageRoot, "dist", "hooks", file);
 		if (existsSync(src)) {
 			cpSync(src, join(destHooksDir, file));
 			copied++;

@@ -17,10 +17,9 @@ import { listAgentNames } from "./agent-format.js";
 export const LITE_SKILLS = ["sh-clarify", "sh-discover", "sh-learn", "sh-test"];
 export const LITE_AGENTS = ["spec-reviewer", "code-reviewer"];
 export const LITE_HOOKS = [
-	"session-start.cjs",
-	"stop-verify.cjs",
-	"stop-learn.cjs",
-	"learn-prompt.cjs",
+	"session-start-lite.js",
+	"stop-verify-lite.js",
+	"stop-learn-lite.js",
 ];
 
 // Full mode's compiled hook scripts (.js). Lite uses .cjs, so these must go on a

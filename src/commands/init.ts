@@ -56,6 +56,7 @@ function createSuperHarnessDir(projectDir: string, packageRoot: string): void {
 	// Copy using-superharness skill for session-start hook injection
 	const usingSkillSrc = join(
 		packageRoot,
+		"dist",
 		"skills",
 		"using-superharness",
 		"SKILL.md",
@@ -75,7 +76,7 @@ function copySpecTemplate(
 	template: Template,
 	packageRoot: string,
 ): void {
-	const srcDir = join(packageRoot, "spec-templates", template);
+	const srcDir = join(packageRoot, "dist", "spec-templates", template);
 	const destDir = join(projectDir, SUPERHARNESS_DIR, "spec");
 
 	if (!existsSync(srcDir)) {
@@ -132,7 +133,7 @@ function copyInitTemplates(
 	packageRoot: string,
 	platforms: Platform[],
 ): void {
-	const templatesDir = join(packageRoot, "templates");
+	const templatesDir = join(packageRoot, "dist", "templates");
 	const shDir = join(projectDir, SUPERHARNESS_DIR);
 
 	const templateFiles: Record<string, string> = {

@@ -74,7 +74,7 @@ export const AGENT_FORMATS: Record<
 
 // Every agent basename the package ships (agents/*.md → name without extension).
 export function listAgentNames(packageRoot: string): string[] {
-	const dir = join(packageRoot, "agents");
+	const dir = join(packageRoot, "dist", "agents");
 	if (!existsSync(dir)) return [];
 	return readdirSync(dir)
 		.filter((f) => f.endsWith(".md"))
@@ -92,7 +92,7 @@ export function installAgents(
 	mkdirSync(target.dir, { recursive: true });
 	let written = 0;
 	for (const name of names) {
-		const src = join(packageRoot, "agents", `${name}.md`);
+		const src = join(packageRoot, "dist", "agents", `${name}.md`);
 		if (!existsSync(src)) continue;
 		const parsed = parseAgentMd(readFileSync(src, "utf-8"));
 		writeFileSync(

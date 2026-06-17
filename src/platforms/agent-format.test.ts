@@ -17,7 +17,9 @@ import {
 } from "./agent-format.js";
 
 const PACKAGE_ROOT = process.cwd();
-const AGENTS_DIR = join(PACKAGE_ROOT, "agents");
+// Source agents now live under src/ (installAgents/listAgentNames read the
+// built copy under dist/, but the guard test inspects the authored source).
+const AGENTS_DIR = join(PACKAGE_ROOT, "src", "agents");
 
 describe("parseAgentMd", () => {
 	it("extracts name, description and body from frontmatter", () => {

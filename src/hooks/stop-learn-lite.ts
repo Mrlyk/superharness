@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-"use strict";
 // superharness Stop hook — auto-learning.
 //
 // When a session has done substantial work, persist durable learnings into
@@ -27,11 +25,45 @@
 //   SUPERHARNESS_CODEX_BIN=path  explicit codex binary (else resolved from PATH)
 //   SUPERHARNESS_LEARN_EVERY_MESSAGES / _WRITES / _LOCK_MS  throttle tuning
 
-const fs = require("fs");
-const os = require("os");
-const path = require("path");
-const { spawn } = require("child_process");
-const { LEARN_INSTRUCTION, buildChildPrompt } = require("./learn-prompt.cjs");
+import { spawn } from "node:child_process";
+import {
+	existsSync,
+	mkdirSync,
+	openSync,
+	readFileSync,
+	readdirSync,
+	statSync,
+	unlinkSync,
+	writeFileSync,
+} from "node:fs";
+import { homedir } from "node:os";
+import { delimiter, dirname, join } from "node:path";
+import { LEARN_INSTRUCTION, buildChildPrompt } from "./learn-prompt-lite.js";
+
+interface HookInput {
+	cwd?: string;
+	session_id?: string;
+	transcript_path?: string;
+	stop_hook_active?: boolean;
+	[key: string]: unknown;
+}
+
+interface ContentBlock {
+	type?: string;
+	text?: string;
+	name?: string;
+	input?: { file_path?: string; path?: string };
+}
+
+interface TranscriptEntry {
+	type?: string;
+	message?: { content?: string | ContentBlock[] };
+}
+
+interface LearnState {
+	lastUserMessages: number;
+	lastWrites: number;
+}
 
 const MIN_USER_MESSAGES = 5;
 const MAX_TRANSCRIPT_BYTES = 50 * 1024 * 1024;
@@ -50,41 +82,41 @@ const ALLOWED_TOOLS = "Read,Glob,Grep,Write,Edit,MultiEdit";
 const DEFAULT_CLAUDE_MODEL = "sonnet";
 const WRITE_TOOLS = /"name"\s*:\s*"(Edit|Write|MultiEdit|NotebookEdit)"/;
 
-function envInt(name, fallback) {
-	const n = Number.parseInt(process.env[name], 10);
+function envInt(name: string, fallback: number): number {
+	const n = Number.parseInt(process.env[name] ?? "", 10);
 	return Number.isFinite(n) && n >= 0 ? n : fallback;
 }
 const LEARN_EVERY_MESSAGES = envInt("SUPERHARNESS_LEARN_EVERY_MESSAGES", 5);
 const LEARN_EVERY_WRITES = envInt("SUPERHARNESS_LEARN_EVERY_WRITES", 8);
 const LOCK_TTL_MS = envInt("SUPERHARNESS_LEARN_LOCK_MS", 90 * 1000);
 
-function stateDir() {
+function stateDir(): string {
 	return (
 		process.env.SUPERHARNESS_STATE_DIR ||
-		path.join(os.homedir(), ".superharness", "state")
+		join(homedir(), ".superharness", "state")
 	);
 }
 
-function readStdin() {
+function readStdin(): string {
 	try {
-		return fs.readFileSync(0, "utf8");
+		return readFileSync(0, "utf8");
 	} catch {
 		return "";
 	}
 }
 
-function findGitRoot(dir) {
+function findGitRoot(dir: string): string | null {
 	let cur = dir;
-	while (cur && cur !== path.dirname(cur)) {
-		if (fs.existsSync(path.join(cur, ".git"))) return cur;
-		cur = path.dirname(cur);
+	while (cur && cur !== dirname(cur)) {
+		if (existsSync(join(cur, ".git"))) return cur;
+		cur = dirname(cur);
 	}
 	return null;
 }
 
 // A real user message has string content, or an array with text but no
 // tool_result blocks (tool results also arrive as type:"user").
-function isRealUserMessage(entry) {
+function isRealUserMessage(entry: TranscriptEntry): boolean {
 	if (entry.type !== "user") return false;
 	const content = entry.message && entry.message.content;
 	if (typeof content === "string") return content.trim().length > 0;
@@ -97,10 +129,13 @@ function isRealUserMessage(entry) {
 	return false;
 }
 
-function analyzeTranscript(file) {
-	const stat = fs.statSync(file);
+function analyzeTranscript(file: string): {
+	userMessages: number;
+	writes: number;
+} {
+	const stat = statSync(file);
 	if (stat.size > MAX_TRANSCRIPT_BYTES) return { userMessages: 0, writes: 0 };
-	const lines = fs.readFileSync(file, "utf8").split("\n");
+	const lines = readFileSync(file, "utf8").split("\n");
 	let userMessages = 0;
 	let writes = 0;
 	for (const line of lines) {
@@ -108,7 +143,8 @@ function analyzeTranscript(file) {
 		if (WRITE_TOOLS.test(line)) writes += 1;
 		if (line.includes('"type":"user"') || line.includes('"type": "user"')) {
 			try {
-				if (isRealUserMessage(JSON.parse(line))) userMessages += 1;
+				if (isRealUserMessage(JSON.parse(line) as TranscriptEntry))
+					userMessages += 1;
 			} catch {
 				/* skip malformed lines */
 			}
@@ -120,28 +156,25 @@ function analyzeTranscript(file) {
 // Render the transcript as a [user]/[assistant] replay — the only context the
 // fresh background learner gets. Keep the most recent MAX_REPLAY_BYTES: recent
 // corrections matter most, and earlier ones were covered by an earlier spawn.
-function buildReplay(file) {
-	const stat = fs.statSync(file);
+function buildReplay(file: string): string {
+	const stat = statSync(file);
 	if (stat.size > MAX_TRANSCRIPT_BYTES) return "";
-	const turns = [];
-	for (const line of fs.readFileSync(file, "utf8").split("\n")) {
+	const turns: string[] = [];
+	for (const line of readFileSync(file, "utf8").split("\n")) {
 		if (!line) continue;
-		let entry;
+		let entry: TranscriptEntry;
 		try {
-			entry = JSON.parse(line);
+			entry = JSON.parse(line) as TranscriptEntry;
 		} catch {
 			continue;
 		}
 		if (isRealUserMessage(entry)) {
-			turns.push(`[user] ${flattenText(entry.message.content).slice(0, 800)}`);
+			turns.push(`[user] ${flattenText(entry.message?.content).slice(0, 800)}`);
 			continue;
 		}
-		if (
-			entry.type === "assistant" &&
-			entry.message &&
-			Array.isArray(entry.message.content)
-		) {
-			const summary = summarizeAssistant(entry.message.content);
+		const content = entry.message?.content;
+		if (entry.type === "assistant" && Array.isArray(content)) {
+			const summary = summarizeAssistant(content);
 			if (summary) turns.push(`[assistant] ${summary}`);
 		}
 	}
@@ -151,7 +184,7 @@ function buildReplay(file) {
 	return replay;
 }
 
-function flattenText(content) {
+function flattenText(content: string | ContentBlock[] | undefined): string {
 	if (typeof content === "string") return content.trim();
 	if (Array.isArray(content)) {
 		return content
@@ -163,11 +196,11 @@ function flattenText(content) {
 	return "";
 }
 
-function summarizeAssistant(blocks) {
-	const parts = [];
+function summarizeAssistant(blocks: ContentBlock[]): string {
+	const parts: string[] = [];
 	for (const b of blocks) {
 		if (!b) continue;
-		if (b.type === "text" && b.text.trim())
+		if (b.type === "text" && b.text?.trim())
 			parts.push(b.text.trim().slice(0, 200));
 		else if (b.type === "tool_use") {
 			const fp = b.input && (b.input.file_path || b.input.path);
@@ -178,11 +211,11 @@ function summarizeAssistant(blocks) {
 }
 
 // Resolve a CLI binary: honor an explicit override path, else scan PATH.
-function findBin(base, overrideEnv) {
+function findBin(base: string, overrideEnv: string): string | null {
 	const override = process.env[overrideEnv];
 	if (override) {
 		try {
-			if (fs.existsSync(override)) return override;
+			if (existsSync(override)) return override;
 		} catch {
 			/* ignore */
 		}
@@ -191,12 +224,12 @@ function findBin(base, overrideEnv) {
 		process.platform === "win32"
 			? [`${base}.cmd`, `${base}.exe`, base]
 			: [base];
-	for (const d of (process.env.PATH || "").split(path.delimiter)) {
+	for (const d of (process.env.PATH || "").split(delimiter)) {
 		if (!d) continue;
 		for (const n of names) {
-			const p = path.join(d, n);
+			const p = join(d, n);
 			try {
-				if (fs.existsSync(p)) return p;
+				if (existsSync(p)) return p;
 			} catch {
 				/* ignore */
 			}
@@ -205,7 +238,7 @@ function findBin(base, overrideEnv) {
 	return null;
 }
 
-function learnerCli() {
+function learnerCli(): "claude" | "codex" {
 	if (process.env.SUPERHARNESS_LEARN_CLI === "codex") return "codex";
 	if (process.env.SUPERHARNESS_LEARN_CLI === "claude") return "claude";
 	// Auto-detect: prefer claude; fall back to codex when only codex is reachable
@@ -219,7 +252,7 @@ function learnerCli() {
 	return "claude";
 }
 
-function learnerBin(cli) {
+function learnerBin(cli: string): string | null {
 	return cli === "codex"
 		? findBin("codex", "SUPERHARNESS_CODEX_BIN")
 		: findBin("claude", "SUPERHARNESS_CLAUDE_BIN");
@@ -229,7 +262,7 @@ function learnerBin(cli) {
 // file tools (Bash withheld); Codex edits via the shell, sandboxed to
 // workspace-write, so it gets no tool allowlist — its guardrails are the prompt
 // plus the sandbox.
-function learnerArgs(cli, prompt, root) {
+function learnerArgs(cli: string, prompt: string, root: string): string[] {
 	if (cli === "codex") {
 		const args = [
 			"exec",
@@ -260,28 +293,28 @@ function learnerArgs(cli, prompt, root) {
 	];
 }
 
-function readState(file) {
+function readState(file: string): LearnState | null {
 	try {
-		return JSON.parse(fs.readFileSync(file, "utf8"));
+		return JSON.parse(readFileSync(file, "utf8")) as LearnState;
 	} catch {
 		return null;
 	}
 }
 
-function lockFresh(file) {
+function lockFresh(file: string): boolean {
 	try {
-		return Date.now() - fs.statSync(file).mtimeMs < LOCK_TTL_MS;
+		return Date.now() - statSync(file).mtimeMs < LOCK_TTL_MS;
 	} catch {
 		return false;
 	}
 }
 
-function pruneOldMarkers(dir) {
+function pruneOldMarkers(dir: string): void {
 	const cutoff = Date.now() - MARKER_TTL_MS;
-	for (const f of fs.readdirSync(dir)) {
-		const p = path.join(dir, f);
+	for (const f of readdirSync(dir)) {
+		const p = join(dir, f);
 		try {
-			if (fs.statSync(p).mtimeMs < cutoff) fs.unlinkSync(p);
+			if (statSync(p).mtimeMs < cutoff) unlinkSync(p);
 		} catch {
 			/* ignore */
 		}
@@ -290,10 +323,10 @@ function pruneOldMarkers(dir) {
 
 // Old behavior: block the stop once per session and let the main model learn
 // inline. Used when no `claude` binary is reachable or SUPERHARNESS_LEARN_SYNC=1.
-function runSyncFallback(dir, sessionId) {
-	const marker = path.join(dir, `${sessionId}.learned`);
-	if (fs.existsSync(marker)) return;
-	fs.writeFileSync(marker, new Date().toISOString());
+function runSyncFallback(dir: string, sessionId: string): void {
+	const marker = join(dir, `${sessionId}.learned`);
+	if (existsSync(marker)) return;
+	writeFileSync(marker, new Date().toISOString());
 	process.stdout.write(
 		JSON.stringify({ decision: "block", reason: LEARN_INSTRUCTION }),
 	);
@@ -301,14 +334,20 @@ function runSyncFallback(dir, sessionId) {
 
 // ctx = { root, logFile }. Detached so the hook returns immediately; the learner
 // outlives it. SUPERHARNESS_LEARN_CHILD stops the learner from triggering itself.
-function spawnLearner(cli, prompt, ctx) {
-	let logFd = "ignore";
+function spawnLearner(
+	cli: string,
+	prompt: string,
+	ctx: { root: string; logFile: string },
+): void {
+	const bin = learnerBin(cli);
+	if (!bin) return; // binary vanished between the check and here: give up quietly
+	let logFd: number | "ignore" = "ignore";
 	try {
-		logFd = fs.openSync(ctx.logFile, "a");
+		logFd = openSync(ctx.logFile, "a");
 	} catch {
 		/* fall back to ignore */
 	}
-	const child = spawn(learnerBin(cli), learnerArgs(cli, prompt, ctx.root), {
+	const child = spawn(bin, learnerArgs(cli, prompt, ctx.root), {
 		cwd: ctx.root,
 		detached: true,
 		stdio: ["ignore", logFd, logFd],
@@ -320,10 +359,10 @@ function spawnLearner(cli, prompt, ctx) {
 	child.unref();
 }
 
-function main() {
-	let input = {};
+function main(): void {
+	let input: HookInput = {};
 	try {
-		input = JSON.parse(readStdin());
+		input = JSON.parse(readStdin()) as HookInput;
 	} catch {
 		return;
 	}
@@ -343,12 +382,12 @@ function main() {
 	if (!sessionId) return;
 
 	const transcript = input.transcript_path;
-	if (!transcript || !fs.existsSync(transcript)) return;
+	if (!transcript || !existsSync(transcript)) return;
 	const { userMessages, writes } = analyzeTranscript(transcript);
 	if (userMessages < MIN_USER_MESSAGES || writes < 1) return;
 
 	const dir = stateDir();
-	fs.mkdirSync(dir, { recursive: true });
+	mkdirSync(dir, { recursive: true });
 	pruneOldMarkers(dir);
 
 	const dryRun = process.env.SUPERHARNESS_LEARN_DRYRUN === "1";
@@ -361,7 +400,7 @@ function main() {
 	}
 
 	// Spawn mode: re-learn once enough NEW work has accumulated since last spawn.
-	const stateFile = path.join(dir, `${sessionId}.learn.json`);
+	const stateFile = join(dir, `${sessionId}.learn.json`);
 	const st = readState(stateFile) || { lastUserMessages: 0, lastWrites: 0 };
 	const first = st.lastUserMessages === 0;
 	const newMsgs = userMessages - st.lastUserMessages;
@@ -373,10 +412,10 @@ function main() {
 	)
 		return;
 
-	const lock = path.join(dir, `${sessionId}.learn.lock`);
+	const lock = join(dir, `${sessionId}.learn.lock`);
 	if (lockFresh(lock)) return; // a learner is still in flight
 
-	fs.writeFileSync(
+	writeFileSync(
 		stateFile,
 		JSON.stringify({ lastUserMessages: userMessages, lastWrites: writes }),
 	);
@@ -396,13 +435,13 @@ function main() {
 	}
 
 	try {
-		fs.writeFileSync(lock, new Date().toISOString());
+		writeFileSync(lock, new Date().toISOString());
 	} catch {
 		/* best effort */
 	}
 	spawnLearner(cli, buildChildPrompt(buildReplay(transcript), cli), {
 		root,
-		logFile: path.join(dir, `${sessionId}.learn.log`),
+		logFile: join(dir, `${sessionId}.learn.log`),
 	});
 }
 

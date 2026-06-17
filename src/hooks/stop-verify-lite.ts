@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-"use strict";
 // superharness lite Stop hook: verify-before-done gate.
 // When code changed this session and has not been run, block the stop once and
 // tell the model to execute the changed behavior (documented examples + boundary
@@ -15,10 +13,21 @@
 //   SUPERHARNESS_VERIFY_MIN_LINES=N  churn threshold in changed code lines (default 20)
 //   SUPERHARNESS_NO_VERIFY=1         disable the gate entirely
 
-const fs = require("fs");
-const os = require("os");
-const path = require("path");
-const { execFileSync } = require("child_process");
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+
+interface HookInput {
+	cwd?: string;
+	session_id?: string;
+	stop_hook_active?: boolean;
+	[key: string]: unknown;
+}
+
+interface VerifyState {
+	verifiedChurn: number;
+}
 
 const CODE_EXT =
 	/\.(py|js|jsx|ts|tsx|mjs|cjs|go|rs|java|rb|php|c|cc|cpp|h|hpp|cs|swift|kt|scala|m|mm|vue|svelte)$/i;
@@ -27,36 +36,39 @@ const CODE_EXT =
 const IGNORE_DIR =
 	/(^|\/)(\.git|\.claude|\.superharness|\.aone_copilot|\.codex|node_modules|dist|build|out|coverage|\.next|\.nuxt|vendor|target|\.venv|venv|__pycache__)\//;
 
-function minLines() {
-	const n = Number.parseInt(process.env.SUPERHARNESS_VERIFY_MIN_LINES, 10);
+function minLines(): number {
+	const n = Number.parseInt(
+		process.env.SUPERHARNESS_VERIFY_MIN_LINES ?? "",
+		10,
+	);
 	return Number.isFinite(n) && n > 0 ? n : 20;
 }
 
-function stateDir() {
+function stateDir(): string {
 	return (
 		process.env.SUPERHARNESS_STATE_DIR ||
-		path.join(os.homedir(), ".superharness", "state")
+		join(homedir(), ".superharness", "state")
 	);
 }
 
-function readStdin() {
+function readStdin(): string {
 	try {
-		return fs.readFileSync(0, "utf8");
+		return readFileSync(0, "utf8");
 	} catch {
 		return "";
 	}
 }
 
-function findGitRoot(dir) {
+function findGitRoot(dir: string): string | null {
 	let cur = dir;
-	while (cur && cur !== path.dirname(cur)) {
-		if (fs.existsSync(path.join(cur, ".git"))) return cur;
-		cur = path.dirname(cur);
+	while (cur && cur !== dirname(cur)) {
+		if (existsSync(join(cur, ".git"))) return cur;
+		cur = dirname(cur);
 	}
 	return null;
 }
 
-function git(root, args) {
+function git(root: string, args: string[]): string | null {
 	try {
 		return execFileSync("git", ["-C", root, ...args], {
 			encoding: "utf8",
@@ -71,9 +83,9 @@ function git(root, args) {
 // Total changed lines (added + deleted) in code files vs HEAD, plus the line
 // count of untracked code files — a heuristic for how much unreviewed code there
 // is right now. Doc-only churn does not count.
-function codeChurn(root) {
+function codeChurn(root: string): { churn: number; newFiles: number } {
 	let churn = 0;
-	const newSet = new Set();
+	const newSet = new Set<string>();
 	const numstat = git(root, ["diff", "--numstat", "HEAD", "--"]);
 	if (numstat) {
 		for (const line of numstat.split("\n")) {
@@ -110,9 +122,7 @@ function codeChurn(root) {
 				continue;
 			newSet.add(file);
 			try {
-				churn += fs
-					.readFileSync(path.join(root, file), "utf8")
-					.split("\n").length;
+				churn += readFileSync(join(root, file), "utf8").split("\n").length;
 			} catch {
 				/* unreadable, skip */
 			}
@@ -121,19 +131,19 @@ function codeChurn(root) {
 	return { churn, newFiles: newSet.size };
 }
 
-function readState(file) {
+function readState(file: string): VerifyState | null {
 	try {
-		return JSON.parse(fs.readFileSync(file, "utf8"));
+		return JSON.parse(readFileSync(file, "utf8")) as VerifyState;
 	} catch {
 		return null;
 	}
 }
 
-function main() {
+function main(): void {
 	if (process.env.SUPERHARNESS_NO_VERIFY === "1") return;
-	let input = {};
+	let input: HookInput = {};
 	try {
-		input = JSON.parse(readStdin());
+		input = JSON.parse(readStdin()) as HookInput;
 	} catch {
 		return;
 	}
@@ -153,14 +163,14 @@ function main() {
 	const threshold = minLines();
 
 	const dir = stateDir();
-	fs.mkdirSync(dir, { recursive: true });
-	const stateFile = path.join(dir, `${sessionId}.verify.json`);
+	mkdirSync(dir, { recursive: true });
+	const stateFile = join(dir, `${sessionId}.verify.json`);
 	const st = readState(stateFile) || { verifiedChurn: 0 };
 
 	// A commit (or revert) dropped the pending churn — rebaseline so the next
 	// round re-arms from here, and stay silent.
 	if (churn < st.verifiedChurn) {
-		fs.writeFileSync(stateFile, JSON.stringify({ verifiedChurn: churn }));
+		writeFileSync(stateFile, JSON.stringify({ verifiedChurn: churn }));
 		return;
 	}
 	// Nothing new since the last review.
@@ -170,7 +180,7 @@ function main() {
 	// threshold (a few-line tweak is not worth a full review).
 	if (newFiles === 0 && churn - st.verifiedChurn < threshold) return;
 
-	fs.writeFileSync(stateFile, JSON.stringify({ verifiedChurn: churn }));
+	writeFileSync(stateFile, JSON.stringify({ verifiedChurn: churn }));
 	process.stdout.write(
 		JSON.stringify({
 			decision: "block",
