@@ -23,36 +23,7 @@ mkrepo() {
   git -C "$1" config user.email t@t.local
   git -C "$1" config user.name t
 }
-nlines() { python3 -c "import sys;print(chr(10).join('x'+str(i)+'=1' for i in range(int(sys.argv[1]))))" "$1"; }
-verify() { printf '{"session_id":"%s","cwd":"%s","stop_hook_active":%s}' "$1" "$2" "${3:-false}" | node "$HOOKS/stop-verify-lite.js"; }
-
 mkdir -p "$TMP/nogit"
-
-echo "== stop-verify-lite.js =="
-R="$TMP/r"; mkrepo "$R"
-nlines 8 > "$R/sol.py"
-assert_contains "new code file gates regardless of size" "$(verify s1 "$R")" '"decision":"block"'
-assert_empty "same state stays silent (churn cursor)" "$(verify s1 "$R")"
-
-git -C "$R" add -A; git -C "$R" commit -qm base >/dev/null 2>&1
-# a NEW file already `git add`ed must still gate (not only untracked ones)
-nlines 6 > "$R/staged.py"; git -C "$R" add staged.py
-assert_contains "staged new code file gates regardless of size" "$(verify sg "$R")" '"decision":"block"'
-git -C "$R" rm -q --cached staged.py >/dev/null 2>&1; rm -f "$R/staged.py"
-printf 'a=1\nb=2\n' >> "$R/sol.py"
-assert_empty "small edit to a tracked file stays silent" "$(verify s2 "$R")"
-
-printf 'hello\n' > "$R/notes.md"
-assert_empty "new doc file stays silent (not code)" "$(verify s3 "$R")"
-
-mkdir -p "$R/.claude/hooks"; printf 'const x = 1;\n' > "$R/.claude/hooks/foo.cjs"
-assert_empty "tool dirs (.claude) are ignored" "$(verify s4 "$R")"
-
-assert_empty "stop_hook_active suppresses the gate" "$(verify s5 "$R" true)"
-assert_empty "non-git cwd stays silent" "$(printf '{"session_id":"s6","cwd":"%s"}' "$TMP/nogit" | node "$HOOKS/stop-verify-lite.js")"
-
-nlines 30 >> "$R/sol.py"
-assert_contains "large edit to a tracked file gates" "$(verify s7 "$R")" '"decision":"block"'
 
 echo "== session-start-lite.js =="
 S="$TMP/s"; mkrepo "$S"; printf '{}' > "$S/package.json"

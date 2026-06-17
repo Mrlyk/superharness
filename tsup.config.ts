@@ -18,7 +18,6 @@ export default defineConfig([
 			"hooks/pre-tool-use": "src/hooks/pre-tool-use.ts",
 			"hooks/subagent-stop": "src/hooks/subagent-stop.ts",
 			"hooks/session-start-lite": "src/hooks/session-start-lite.ts",
-			"hooks/stop-verify-lite": "src/hooks/stop-verify-lite.ts",
 			"hooks/stop-learn-lite": "src/hooks/stop-learn-lite.ts",
 		},
 		format: ["esm"],

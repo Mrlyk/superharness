@@ -249,7 +249,8 @@ describe("update command", () => {
 		expect(settings).not.toContain("pre-tool-use.js");
 		expect(settings).not.toContain("subagent-stop.js");
 		expect(settings).toContain("session-start-lite.js");
-		expect(settings).toContain("stop-verify-lite.js");
+		expect(settings).toContain("stop-learn-lite.js");
+		expect(settings).not.toContain("stop-verify-lite.js");
 	});
 
 	it("lite update prunes skills lite no longer ships, keeps the user's own (even a same bare name) and the sediment", async () => {
@@ -359,7 +360,7 @@ describe("update command", () => {
 		);
 		expect(qoderSettings).toContain("UserPromptSubmit");
 		expect(qoderSettings).toContain("session-start-lite.js");
-		expect(qoderSettings).toContain("stop-verify-lite.js");
+		expect(qoderSettings).toContain("stop-learn-lite.js");
 		expect(qoderSettings).toContain("Stop");
 
 		// claude lite also gets the reviewer agents

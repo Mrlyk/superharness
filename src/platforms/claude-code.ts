@@ -146,11 +146,6 @@ function installLite(projectDir: string, packageRoot: string): void {
 				hooks: [
 					{
 						type: "command",
-						command: "node .claude/hooks/stop-verify-lite.js",
-						timeout: 15,
-					},
-					{
-						type: "command",
 						command: "node .claude/hooks/stop-learn-lite.js",
 						timeout: 15,
 					},
